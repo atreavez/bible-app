@@ -83,6 +83,15 @@ export const translations = [
   { id: "bbe", name: "Bible in Basic English", abbreviation: "BBE" },
   { id: "asv", name: "American Standard Version", abbreviation: "ASV" },
   { id: "ylt", name: "Young's Literal Translation", abbreviation: "YLT" },
+  { id: "darby", name: "Darby Translation", abbreviation: "DARBY" },
+  { id: "web", name: "Webster's Bible", abbreviation: "WBT" },
+  { id: "almeida", name: "João Ferreira de Almeida", abbreviation: "JFA" },
+  { id: "rva", name: "Reina Valera", abbreviation: "RVA" },
+  { id: "cherokee", name: "Cherokee New Testament", abbreviation: "CHR" },
+  { id: "oeb-us", name: "Open English Bible (US)", abbreviation: "OEB-US" },
+  { id: "oeb-cw", name: "Open English Bible (CW)", abbreviation: "OEB-CW" },
+  { id: "webbe", name: "World English Bible (British)", abbreviation: "WEBBE" },
+  { id: "clementine", name: "Clementine Latin Vulgate", abbreviation: "VULG" },
 ];
 
 export const bibleStories = [

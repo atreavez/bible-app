@@ -263,5 +263,8 @@ export default function Index() {
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/read", label: "Read Bible" },
+  { to: "/search", label: "Search" },
+  { to: "/devotional", label: "Devotional" },
   { to: "/stories", label: "AI Stories" },
+  { to: "/bookmarks", label: "Bookmarks" },
 ];

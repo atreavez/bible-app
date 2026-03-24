@@ -137,7 +137,7 @@ export default function BibleStories() {
                 Back to all stories
               </button>
 
-              <div className="ornate-border rounded-sm bg-card/80 backdrop-blur-sm overflow-hidden">
+              <div className="ornate-border rounded-2xl bg-card/80 backdrop-blur-sm overflow-hidden">
                 <div className="h-48 bg-gradient-earth flex items-center justify-center text-7xl">
                   {activeStory.image}
                 </div>
@@ -158,7 +158,7 @@ export default function BibleStories() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="mt-8 ornate-border rounded-sm bg-parchment/50 p-6 md:p-8"
+                      className="mt-8 ornate-border rounded-2xl bg-parchment/50 p-6 md:p-8"
                     >
                       <div className="flex items-center gap-2 mb-4">
                         <Sparkles className="w-4 h-4 text-gold" />
@@ -184,7 +184,7 @@ export default function BibleStories() {
                       whileTap={{ scale: 0.98 }}
                       onClick={generateStory}
                       disabled={isGenerating}
-                      className="ornate-border-hover px-6 py-3 bg-gold/90 hover:bg-gold text-earth font-display text-sm tracking-wide rounded-sm flex items-center gap-2 transition-all duration-300 disabled:opacity-50"
+                      className="ornate-border-hover px-6 py-3 bg-gold/90 hover:bg-gold text-earth font-display text-sm tracking-wide rounded-2xl flex items-center gap-2 transition-all duration-300 disabled:opacity-50"
                     >
                       {isGenerating ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -195,7 +195,7 @@ export default function BibleStories() {
                     </motion.button>
                     <Link
                       to="/read"
-                      className="ornate-border-hover px-6 py-3 bg-olive/90 hover:bg-olive text-primary-foreground font-display text-sm tracking-wide rounded-sm flex items-center gap-2 transition-all duration-300"
+                      className="ornate-border-hover px-6 py-3 bg-olive/90 hover:bg-olive text-primary-foreground font-display text-sm tracking-wide rounded-2xl flex items-center gap-2 transition-all duration-300"
                     >
                       <BookOpen className="w-4 h-4" />
                       Read in Bible
@@ -219,7 +219,7 @@ export default function BibleStories() {
                       whileTap={{ scale: 0.98 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                       onClick={() => setSelectedStory(story.id)}
-                      className="ornate-border-hover rounded-sm overflow-hidden bg-card/80 backdrop-blur-sm cursor-pointer group"
+                      className="ornate-border-hover rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm cursor-pointer group"
                     >
                       <div className="h-36 bg-gradient-earth flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-700">
                         {story.image}

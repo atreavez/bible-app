@@ -14,6 +14,7 @@ export default function BibleReader() {
   const [verses, setVerses] = useState<{ verse: number; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBookList, setShowBookList] = useState(false);
+  const { addBookmark, isBookmarked } = useBookmarks();
   const [searchQuery, setSearchQuery] = useState("");
   const [isReading, setIsReading] = useState(false);
   const [activeTestament, setActiveTestament] = useState<"old" | "new">("old");

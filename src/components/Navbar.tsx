@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Menu, X } from "lucide-react";
+import { BookOpen, Menu, X, Search, Bookmark, Sun } from "lucide-react";
 
 const navLinks = [
-  { to: "/", label: "Home" },
-  { to: "/read", label: "Read Bible" },
-  { to: "/stories", label: "AI Stories" },
+  { to: "/", label: "Home", icon: BookOpen },
+  { to: "/read", label: "Read", icon: BookOpen },
+  { to: "/search", label: "Search", icon: Search },
+  { to: "/devotional", label: "Devotional", icon: Sun },
+  { to: "/stories", label: "Stories", icon: BookOpen },
+  { to: "/bookmarks", label: "Bookmarks", icon: Bookmark },
 ];
 
 export default function Navbar() {
@@ -34,7 +37,7 @@ export default function Navbar() {
             <Link
               key={link.to}
               to={link.to}
-              className="relative px-4 py-2 font-body text-sm text-earth-foreground/80 hover:text-gold transition-colors duration-300"
+              className="relative px-3 py-2 font-body text-sm text-earth-foreground/80 hover:text-gold transition-colors duration-300"
             >
               {link.label}
               {location.pathname === link.to && (
@@ -72,8 +75,13 @@ export default function Navbar() {
                   key={link.to}
                   to={link.to}
                   onClick={() => setOpen(false)}
-                  className="font-body text-sm text-earth-foreground/80 hover:text-gold py-2 transition-colors"
+                  className={`font-body text-sm py-2 transition-colors flex items-center gap-2 ${
+                    location.pathname === link.to
+                      ? "text-gold"
+                      : "text-earth-foreground/80 hover:text-gold"
+                  }`}
                 >
+                  <link.icon className="w-4 h-4" />
                   {link.label}
                 </Link>
               ))}

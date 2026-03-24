@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import BibleReader from "./pages/BibleReader.tsx";
 import BibleStories from "./pages/BibleStories.tsx";
+import BibleSearch from "./pages/BibleSearch.tsx";
+import DailyDevotional from "./pages/DailyDevotional.tsx";
+import Bookmarks from "./pages/Bookmarks.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -20,6 +23,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/read" element={<BibleReader />} />
           <Route path="/stories" element={<BibleStories />} />
+          <Route path="/search" element={<BibleSearch />} />
+          <Route path="/devotional" element={<DailyDevotional />} />
+          <Route path="/bookmarks" element={<Bookmarks />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Book, ChevronLeft, ChevronRight, Volume2, VolumeX, Search } from "lucide-react";
+import { Book, ChevronLeft, ChevronRight, Volume2, VolumeX, Search, Bookmark, BookmarkCheck } from "lucide-react";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import Navbar from "@/components/Navbar";
 import ScrollReveal from "@/components/ScrollReveal";
 import OrnamentDivider from "@/components/OrnamentDivider";

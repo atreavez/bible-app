@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Menu, X, Search, Bookmark, Sun } from "lucide-react";
+import { BookOpen, Menu, X, Search, Bookmark, Sun, Sparkles } from "lucide-react";
 
 const navLinks = [
-  { to: "/", label: "Home", icon: BookOpen },
-  { to: "/read", label: "Read", icon: BookOpen },
-  { to: "/search", label: "Search", icon: Search },
-  { to: "/devotional", label: "Devotional", icon: Sun },
-  { to: "/stories", label: "Stories", icon: BookOpen },
-  { to: "/bookmarks", label: "Bookmarks", icon: Bookmark },
+  { to: "/", label: "Home" },
+  { to: "/read", label: "Read" },
+  { to: "/search", label: "Search" },
+  { to: "/devotional", label: "Devotional" },
+  { to: "/stories", label: "Stories" },
+  { to: "/bookmarks", label: "Bookmarks" },
 ];
 
 export default function Navbar() {
@@ -21,32 +21,31 @@ export default function Navbar() {
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-0 left-0 right-0 z-50 glass-earth border-b border-gold/20"
+      className="fixed top-0 left-0 right-0 z-50 glass-earth border-b border-gold/15"
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
-          <BookOpen className="w-6 h-6 text-gold transition-transform duration-300 group-hover:rotate-12" />
+          <div className="w-8 h-8 rounded-lg bg-olive/20 border border-gold/20 flex items-center justify-center transition-all duration-300 group-hover:border-gold/40 group-hover:bg-olive/30">
+            <BookOpen className="w-4 h-4 text-gold transition-transform duration-300 group-hover:rotate-12" />
+          </div>
           <span className="font-display text-xl font-semibold text-earth-foreground tracking-wide">
             Scripture
           </span>
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-1 bg-earth/30 rounded-xl px-2 py-1">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
-              className="relative px-3 py-2 font-body text-sm text-earth-foreground/80 hover:text-gold transition-colors duration-300"
+              className={`relative px-3.5 py-1.5 font-body text-sm rounded-lg transition-all duration-300 ${
+                location.pathname === link.to
+                  ? "bg-olive/30 text-gold"
+                  : "text-earth-foreground/70 hover:text-gold hover:bg-earth/30"
+              }`}
             >
               {link.label}
-              {location.pathname === link.to && (
-                <motion.div
-                  layoutId="nav-indicator"
-                  className="absolute bottom-0 left-2 right-2 h-0.5 bg-gold rounded-full"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
             </Link>
           ))}
         </div>
@@ -54,9 +53,9 @@ export default function Navbar() {
         {/* Mobile toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden text-earth-foreground/80 hover:text-gold transition-colors"
+          className="md:hidden w-9 h-9 rounded-lg bg-earth/30 border border-gold/10 flex items-center justify-center text-earth-foreground/80 hover:text-gold transition-colors"
         >
-          {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </button>
       </div>
 
@@ -69,19 +68,18 @@ export default function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden glass-earth border-t border-gold/10 overflow-hidden"
           >
-            <div className="px-6 py-4 flex flex-col gap-2">
+            <div className="px-6 py-4 flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
                   onClick={() => setOpen(false)}
-                  className={`font-body text-sm py-2 transition-colors flex items-center gap-2 ${
+                  className={`font-body text-sm py-2.5 px-3 rounded-lg transition-all ${
                     location.pathname === link.to
-                      ? "text-gold"
-                      : "text-earth-foreground/80 hover:text-gold"
+                      ? "text-gold bg-olive/20"
+                      : "text-earth-foreground/80 hover:text-gold hover:bg-earth/20"
                   }`}
                 >
-                  <link.icon className="w-4 h-4" />
                   {link.label}
                 </Link>
               ))}

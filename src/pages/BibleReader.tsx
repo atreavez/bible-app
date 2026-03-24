@@ -247,20 +247,41 @@ export default function BibleReader() {
                       {selectedTranslation.abbreviation}
                     </h3>
                     <div className="space-y-4">
-                      {verses.map((v, i) => (
-                        <motion.p
-                          key={v.verse}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.03, duration: 0.3 }}
-                          className="font-body text-base md:text-lg leading-relaxed text-foreground/90 hover:text-foreground transition-colors duration-300 group cursor-default"
-                        >
-                          <span className="font-display text-sm font-bold text-olive/70 mr-2 align-super group-hover:text-gold transition-colors duration-300">
-                            {v.verse}
-                          </span>
-                          {v.text}
-                        </motion.p>
-                      ))}
+                      {verses.map((v, i) => {
+                        const bookmarked = isBookmarked(selectedBook.name, selectedChapter, v.verse, selectedTranslation.id);
+                        return (
+                          <motion.div
+                            key={v.verse}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.03, duration: 0.3 }}
+                            className="flex items-start gap-2 group cursor-default"
+                          >
+                            <p className="flex-1 font-body text-base md:text-lg leading-relaxed text-foreground/90 hover:text-foreground transition-colors duration-300">
+                              <span className="font-display text-sm font-bold text-olive/70 mr-2 align-super group-hover:text-gold transition-colors duration-300">
+                                {v.verse}
+                              </span>
+                              {v.text}
+                            </p>
+                            <motion.button
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => addBookmark({
+                                book: selectedBook.name,
+                                chapter: selectedChapter,
+                                verse: v.verse,
+                                text: v.text,
+                                translation: selectedTranslation.id,
+                              })}
+                              className={`mt-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300 ${
+                                bookmarked ? "!opacity-100 text-gold" : "text-muted-foreground/40 hover:text-gold"
+                              }`}
+                            >
+                              {bookmarked ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                            </motion.button>
+                          </motion.div>
+                        );
+                      })}
                     </div>
                   </motion.div>
                 )}

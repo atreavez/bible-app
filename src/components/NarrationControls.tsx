@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Volume2, Pause, VolumeX, Settings2 } from "lucide-react";
+import { Volume2, Pause, VolumeX, Settings2, AlertCircle } from "lucide-react";
 import { useNarration } from "@/hooks/useNarration";
 
 interface NarrationControlsProps {

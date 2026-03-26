@@ -138,6 +138,7 @@ export default function NarrationControls({ getText, className = "" }: Narration
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

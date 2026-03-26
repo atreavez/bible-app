@@ -129,6 +129,7 @@ export function useNarration() {
 
   return {
     state,
+    error,
     speak,
     pause,
     resume,

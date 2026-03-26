@@ -77,6 +77,7 @@ export function useNarration() {
 
     if (!cleanText) {
       setError("No text to read aloud.");
+      console.warn("No text to read aloud.");
       return;
     }
 
@@ -89,19 +90,35 @@ export function useNarration() {
     utterance.pitch = pitch;
     utterance.volume = 1;
 
-    utterance.onstart = () => setState("speaking");
-    utterance.onend = () => setState("idle");
+    utterance.onstart = () => {
+      setState("speaking");
+      console.log("Speech started");
+    };
+    utterance.onend = () => {
+      setState("idle");
+      console.log("Speech ended");
+    };
     utterance.onerror = (e) => {
       setState("idle");
+      console.error("Speech synthesis error:", e);
       if (e.error === "not-allowed") {
         setError("Speech blocked by browser. Try the published site or click again after a user gesture.");
+      } else {
+        setError("Speech synthesis error: " + e.error);
       }
     };
-    utterance.onpause = () => setState("paused");
-    utterance.onresume = () => setState("speaking");
+    utterance.onpause = () => {
+      setState("paused");
+      console.log("Speech paused");
+    };
+    utterance.onresume = () => {
+      setState("speaking");
+      console.log("Speech resumed");
+    };
 
     utteranceRef.current = utterance;
     window.speechSynthesis.speak(utterance);
+    console.log("Speech synthesis invoked.");
   }, [rate, pitch]);
 
   const pause = useCallback(() => {

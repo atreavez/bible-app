@@ -12,6 +12,18 @@ export default function NarrationControls({ getText, className = "" }: Narration
   const narration = useNarration();
   const [showSettings, setShowSettings] = useState(false);
 
+  // Debug: log narration state and errors
+  if (narration.error) {
+    console.error("Narration error:", narration.error);
+  }
+
+  // Debug: log when Listen button is clicked and what text is passed
+  const handleListenClick = () => {
+    const text = getText();
+    console.log("Listen button clicked. Text:", text);
+    narration.toggle(text);
+  };
+
   return (
     <div className={`relative ${className}`}>
       {/* Error message */}
@@ -47,7 +59,7 @@ export default function NarrationControls({ getText, className = "" }: Narration
 
       {/* Play/Pause */}
       <button
-        onClick={() => narration.toggle(getText())}
+        onClick={handleListenClick}
         className={`ornate-border-hover px-5 py-2.5 rounded-xl flex items-center gap-2 font-body text-sm transition-all duration-300 ${
           narration.isSpeaking
             ? "bg-olive text-primary-foreground"

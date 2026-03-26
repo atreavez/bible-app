@@ -77,21 +77,39 @@ export const bibleBooks: BibleBook[] = [
   { name: "Revelation", chapters: 22, testament: "new", abbreviation: "Rev" },
 ];
 
-export const translations = [
-  { id: "kjv", name: "King James Version", abbreviation: "KJV" },
-  { id: "web", name: "World English Bible", abbreviation: "WEB" },
-  { id: "bbe", name: "Bible in Basic English", abbreviation: "BBE" },
-  { id: "asv", name: "American Standard Version", abbreviation: "ASV" },
-  { id: "ylt", name: "Young's Literal Translation", abbreviation: "YLT" },
-  { id: "darby", name: "Darby Translation", abbreviation: "DARBY" },
-  { id: "web", name: "Webster's Bible", abbreviation: "WBT" },
-  { id: "almeida", name: "João Ferreira de Almeida", abbreviation: "JFA" },
-  { id: "rva", name: "Reina Valera", abbreviation: "RVA" },
-  { id: "cherokee", name: "Cherokee New Testament", abbreviation: "CHR" },
-  { id: "oeb-us", name: "Open English Bible (US)", abbreviation: "OEB-US" },
-  { id: "oeb-cw", name: "Open English Bible (CW)", abbreviation: "OEB-CW" },
-  { id: "webbe", name: "World English Bible (British)", abbreviation: "WEBBE" },
-  { id: "clementine", name: "Clementine Latin Vulgate", abbreviation: "VULG" },
+export interface Translation {
+  id: string;
+  name: string;
+  abbreviation: string;
+  source: "bible-api" | "helloao";
+}
+
+export const translations: Translation[] = [
+  // bible-api.com translations
+  { id: "kjv", name: "King James Version", abbreviation: "KJV", source: "bible-api" },
+  { id: "web", name: "World English Bible", abbreviation: "WEB", source: "bible-api" },
+  { id: "bbe", name: "Bible in Basic English", abbreviation: "BBE", source: "bible-api" },
+  { id: "asv", name: "American Standard Version", abbreviation: "ASV", source: "bible-api" },
+  { id: "ylt", name: "Young's Literal Translation", abbreviation: "YLT", source: "bible-api" },
+  { id: "darby", name: "Darby Bible", abbreviation: "DARBY", source: "bible-api" },
+  { id: "dra", name: "Douay-Rheims 1899 American Edition", abbreviation: "DRA", source: "bible-api" },
+  { id: "webbe", name: "World English Bible (British)", abbreviation: "WEBBE", source: "bible-api" },
+  { id: "oeb-us", name: "Open English Bible (US)", abbreviation: "OEB-US", source: "bible-api" },
+  { id: "oeb-cw", name: "Open English Bible (CW)", abbreviation: "OEB-CW", source: "bible-api" },
+  { id: "almeida", name: "João Ferreira de Almeida", abbreviation: "JFA", source: "bible-api" },
+  { id: "rva", name: "Reina Valera", abbreviation: "RVA", source: "bible-api" },
+  { id: "cherokee", name: "Cherokee New Testament", abbreviation: "CHR", source: "bible-api" },
+  { id: "clementine", name: "Clementine Latin Vulgate", abbreviation: "VULG", source: "bible-api" },
+  { id: "cuv", name: "Chinese Union Version", abbreviation: "CUV", source: "bible-api" },
+  { id: "bkr", name: "Bible Kralická (Czech)", abbreviation: "BKR", source: "bible-api" },
+  // bible.helloao.org translations
+  { id: "BSB", name: "Berean Standard Bible", abbreviation: "BSB", source: "helloao" },
+  { id: "BibleWeek", name: "BibleWeek", abbreviation: "BW", source: "helloao" },
+  { id: "FBV", name: "Free Bible Version", abbreviation: "FBV", source: "helloao" },
+  { id: "LSV", name: "Literal Standard Version", abbreviation: "LSV", source: "helloao" },
+  { id: "WMB", name: "World Messianic Bible", abbreviation: "WMB", source: "helloao" },
+  { id: "WMBBE", name: "World Messianic Bible British Ed.", abbreviation: "WMBBE", source: "helloao" },
+  { id: "T4T", name: "Translation for Translators", abbreviation: "T4T", source: "helloao" },
 ];
 
 export const bibleStories = [
@@ -161,30 +179,93 @@ export const bibleStories = [
   },
 ];
 
+// Map book names to helloao.org format
+function bookToHelloaoId(bookName: string): string {
+  const map: Record<string, string> = {
+    "Genesis": "GEN", "Exodus": "EXO", "Leviticus": "LEV", "Numbers": "NUM",
+    "Deuteronomy": "DEU", "Joshua": "JOS", "Judges": "JDG", "Ruth": "RUT",
+    "1 Samuel": "1SA", "2 Samuel": "2SA", "1 Kings": "1KI", "2 Kings": "2KI",
+    "1 Chronicles": "1CH", "2 Chronicles": "2CH", "Ezra": "EZR", "Nehemiah": "NEH",
+    "Esther": "EST", "Job": "JOB", "Psalms": "PSA", "Proverbs": "PRO",
+    "Ecclesiastes": "ECC", "Song of Solomon": "SNG", "Isaiah": "ISA", "Jeremiah": "JER",
+    "Lamentations": "LAM", "Ezekiel": "EZK", "Daniel": "DAN", "Hosea": "HOS",
+    "Joel": "JOL", "Amos": "AMO", "Obadiah": "OBA", "Jonah": "JON",
+    "Micah": "MIC", "Nahum": "NAM", "Habakkuk": "HAB", "Zephaniah": "ZEP",
+    "Haggai": "HAG", "Zechariah": "ZEC", "Malachi": "MAL",
+    "Matthew": "MAT", "Mark": "MRK", "Luke": "LUK", "John": "JHN",
+    "Acts": "ACT", "Romans": "ROM", "1 Corinthians": "1CO", "2 Corinthians": "2CO",
+    "Galatians": "GAL", "Ephesians": "EPH", "Philippians": "PHP", "Colossians": "COL",
+    "1 Thessalonians": "1TH", "2 Thessalonians": "2TH", "1 Timothy": "1TI", "2 Timothy": "2TI",
+    "Titus": "TIT", "Philemon": "PHM", "Hebrews": "HEB", "James": "JAS",
+    "1 Peter": "1PE", "2 Peter": "2PE", "1 John": "1JN", "2 John": "2JN",
+    "3 John": "3JN", "Jude": "JUD", "Revelation": "REV",
+  };
+  return map[bookName] || bookName;
+}
+
+async function fetchFromHelloao(
+  translationId: string,
+  book: string,
+  chapter: number
+): Promise<{ verses: { verse: number; text: string }[] }> {
+  const bookId = bookToHelloaoId(book);
+  const response = await fetch(
+    `https://bible.helloao.org/api/${translationId}/${bookId}/${chapter}.json`
+  );
+  if (!response.ok) throw new Error("Failed to fetch from helloao");
+  const data = await response.json();
+  const content = data.chapter?.content;
+  if (!content) throw new Error("No content");
+  
+  const verses: { verse: number; text: string }[] = [];
+  for (const item of content) {
+    if (item.type === "verse") {
+      const verseNum = parseInt(item.number, 10);
+      const text = (item.content || [])
+        .filter((c: any) => typeof c === "string" || c.text)
+        .map((c: any) => (typeof c === "string" ? c : c.text))
+        .join("");
+      if (text.trim()) verses.push({ verse: verseNum, text: text.trim() });
+    }
+  }
+  return { verses };
+}
+
+async function fetchFromBibleApi(
+  translationId: string,
+  book: string,
+  chapter: number
+): Promise<{ verses: { verse: number; text: string }[] }> {
+  const response = await fetch(
+    `https://bible-api.com/${book}+${chapter}?translation=${translationId}`
+  );
+  if (!response.ok) throw new Error("Failed to fetch");
+  const data = await response.json();
+  return {
+    verses: data.verses?.map((v: any) => ({
+      verse: v.verse,
+      text: v.text,
+    })) || [],
+  };
+}
+
 // API helper to fetch Bible text
 export async function fetchBibleText(
   translation: string,
   book: string,
   chapter: number
 ): Promise<{ verses: { verse: number; text: string }[] }> {
+  const t = translations.find((tr) => tr.id === translation);
   try {
-    const response = await fetch(
-      `https://bible-api.com/${book}+${chapter}?translation=${translation}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch");
-    const data = await response.json();
-    return {
-      verses: data.verses?.map((v: any) => ({
-        verse: v.verse,
-        text: v.text,
-      })) || [],
-    };
+    if (t?.source === "helloao") {
+      return await fetchFromHelloao(translation, book, chapter);
+    }
+    return await fetchFromBibleApi(translation, book, chapter);
   } catch {
-    // Fallback sample verses
     return {
       verses: Array.from({ length: 10 }, (_, i) => ({
         verse: i + 1,
-        text: `[Verse ${i + 1} — select a book and chapter to load verses from the ${translation.toUpperCase()} translation]`,
+        text: `[Verse ${i + 1} — unable to load. Try another translation.]`,
       })),
     };
   }

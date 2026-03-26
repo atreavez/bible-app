@@ -124,7 +124,9 @@ export function useNarration() {
 
         utterance.onstart = () => {
           setState("speaking");
-          console.log(`Speech started (chunk ${chunkIndex + 1}/${chunks.length})`);
+          console.log(
+            `Speech started (chunk ${chunkIndex + 1}/${chunks.length})`,
+          );
         };
         utterance.onend = () => {
           chunkIndex++;

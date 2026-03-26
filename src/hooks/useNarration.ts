@@ -37,6 +37,7 @@ function getBestVoice(): SpeechSynthesisVoice | null {
 
 export function useNarration() {
   const [state, setState] = useState<NarrationState>("idle");
+  const [error, setError] = useState<string | null>(null);
   const [rate, setRate] = useState(0.9);
   const [pitch, setPitch] = useState(1.0);
   const [voicesLoaded, setVoicesLoaded] = useState(false);

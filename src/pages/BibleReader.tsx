@@ -66,8 +66,8 @@ export default function BibleReader() {
                   }}
                   className="mt-2 w-full bg-background border border-border rounded-xl px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gold/30"
                 >
-                  {translations.map((t) => (
-                    <option key={t.id + t.abbreviation} value={t.id}>
+                  {translations.map((t, idx) => (
+                    <option key={`${t.id}-${t.abbreviation}-${idx}`} value={t.id}>
                       {t.abbreviation} — {t.name}
                     </option>
                   ))}

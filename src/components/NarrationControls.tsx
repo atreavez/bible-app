@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Volume2, Pause, VolumeX, Settings2 } from "lucide-react";
+import { Volume2, Pause, VolumeX, Settings2, AlertCircle } from "lucide-react";
 import { useNarration } from "@/hooks/useNarration";
 
 interface NarrationControlsProps {
@@ -13,7 +13,22 @@ export default function NarrationControls({ getText, className = "" }: Narration
   const [showSettings, setShowSettings] = useState(false);
 
   return (
-    <div className={`relative flex items-center gap-2 ${className}`}>
+    <div className={`relative ${className}`}>
+      {/* Error message */}
+      <AnimatePresence>
+        {narration.error && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute bottom-full mb-2 right-0 w-72 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-body flex items-start gap-2 z-50"
+          >
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            {narration.error}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="flex items-center gap-2">
       {/* Stop button */}
       <AnimatePresence>
         {!narration.isIdle && (
@@ -123,6 +138,7 @@ export default function NarrationControls({ getText, className = "" }: Narration
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

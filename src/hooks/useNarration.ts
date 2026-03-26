@@ -37,6 +37,7 @@ function getBestVoice(): SpeechSynthesisVoice | null {
 
 export function useNarration() {
   const [state, setState] = useState<NarrationState>("idle");
+  const [error, setError] = useState<string | null>(null);
   const [rate, setRate] = useState(0.9);
   const [pitch, setPitch] = useState(1.0);
   const [voicesLoaded, setVoicesLoaded] = useState(false);
@@ -58,6 +59,12 @@ export function useNarration() {
   }, []);
 
   const speak = useCallback((text: string) => {
+    if (!window.speechSynthesis) {
+      console.warn("SpeechSynthesis not available in this browser context");
+      setError("Speech is not available in this browser. Try opening the published site directly.");
+      return;
+    }
+
     window.speechSynthesis.cancel();
 
     // Strip markdown formatting for cleaner speech
@@ -68,7 +75,12 @@ export function useNarration() {
       .replace(/\n/g, " ")
       .trim();
 
-    if (!cleanText) return;
+    if (!cleanText) {
+      setError("No text to read aloud.");
+      return;
+    }
+
+    setError(null);
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const voice = getBestVoice();
@@ -79,7 +91,12 @@ export function useNarration() {
 
     utterance.onstart = () => setState("speaking");
     utterance.onend = () => setState("idle");
-    utterance.onerror = () => setState("idle");
+    utterance.onerror = (e) => {
+      setState("idle");
+      if (e.error === "not-allowed") {
+        setError("Speech blocked by browser. Try the published site or click again after a user gesture.");
+      }
+    };
     utterance.onpause = () => setState("paused");
     utterance.onresume = () => setState("speaking");
 
@@ -112,6 +129,7 @@ export function useNarration() {
 
   return {
     state,
+    error,
     speak,
     pause,
     resume,

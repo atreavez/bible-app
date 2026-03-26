@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Volume2, VolumeX, Pause, Search, Bookmark, BookmarkCheck } from "lucide-react";
-import { useNarration } from "@/hooks/useNarration";
+import { ChevronLeft, ChevronRight, Search, Bookmark, BookmarkCheck } from "lucide-react";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import Navbar from "@/components/Navbar";
 import GsapReveal from "@/components/GsapReveal";
+import NarrationControls from "@/components/NarrationControls";
 import OrnamentDivider from "@/components/OrnamentDivider";
 import { bibleBooks, translations, fetchBibleText, type BibleBook } from "@/lib/bibleData";
 
@@ -16,7 +16,6 @@ export default function BibleReader() {
   const [loading, setLoading] = useState(false);
   const { addBookmark, isBookmarked } = useBookmarks();
   const [searchQuery, setSearchQuery] = useState("");
-  const narration = useNarration();
   const [activeTestament, setActiveTestament] = useState<"old" | "new">("old");
 
   const loadChapter = useCallback(async () => {
@@ -33,11 +32,6 @@ export default function BibleReader() {
   };
   const handleNextChapter = () => {
     if (selectedChapter < selectedBook.chapters) setSelectedChapter((c) => c + 1);
-  };
-
-  const toggleAudio = () => {
-    const text = verses.map((v) => v.text).join(" ");
-    narration.toggle(text);
   };
 
   const filteredBooks = bibleBooks.filter(
@@ -181,25 +175,8 @@ export default function BibleReader() {
             </div>
 
             {/* Audio Controls */}
-            <div className="mb-6 flex items-center justify-end gap-3">
-              {!narration.isIdle && (
-                <button
-                  onClick={narration.stop}
-                  className="ornate-border-hover px-4 py-2.5 rounded-xl flex items-center gap-2 font-body text-sm bg-card text-foreground hover:text-destructive transition-all duration-300"
-                >
-                  <VolumeX className="w-4 h-4" />
-                  Stop
-                </button>
-              )}
-              <button
-                onClick={toggleAudio}
-                className={`ornate-border-hover px-5 py-2.5 rounded-xl flex items-center gap-2 font-body text-sm transition-all duration-300 ${
-                  narration.isSpeaking ? "bg-olive text-primary-foreground" : narration.isPaused ? "bg-gold/80 text-earth" : "bg-card text-foreground hover:text-olive"
-                }`}
-              >
-                {narration.isSpeaking ? <Pause className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                {narration.isSpeaking ? "Pause" : narration.isPaused ? "Resume" : "Listen"}
-              </button>
+            <div className="mb-6 flex justify-end">
+              <NarrationControls getText={() => verses.map((v) => v.text).join(" ")} />
             </div>
 
             {/* Verses */}

@@ -1,3 +1,13 @@
+.glow-chunk {
+  background: linear-gradient(90deg, #fffbe6 60%, #ffe066 100%);
+  box-shadow:
+    0 0 8px 2px #ffe066cc,
+    0 0 0 2px #ffe06699;
+  border-radius: 0.5em;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
 #root {
   max-width: 1280px;
   margin: 0 auto;

@@ -1,29 +1,23 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Volume2, Pause, VolumeX, Settings2, AlertCircle } from "lucide-react";
-import { useNarration } from "@/hooks/useNarration";
+import type { NarrationHandle } from "@/hooks/useNarration";
 
 interface NarrationControlsProps {
+  narration: NarrationHandle;
   getText: () => string;
   className?: string;
 }
 
 export default function NarrationControls({
+  narration,
   getText,
   className = "",
 }: NarrationControlsProps) {
-  const narration = useNarration();
   const [showSettings, setShowSettings] = useState(false);
 
-  // Debug: log narration state and errors
-  if (narration.error) {
-    console.error("Narration error:", narration.error);
-  }
-
-  // Debug: log when Listen button is clicked and what text is passed
   const handleListenClick = () => {
     const text = getText();
-    console.log("Listen button clicked. Text:", text);
     narration.toggle(text);
   };
 
@@ -43,6 +37,7 @@ export default function NarrationControls({
           </motion.div>
         )}
       </AnimatePresence>
+
       <div className="flex items-center gap-2">
         {/* Stop button */}
         <AnimatePresence>
@@ -125,18 +120,12 @@ export default function NarrationControls({
                   max="2.0"
                   step="0.1"
                   value={narration.rate}
-                  onChange={(e) =>
-                    narration.setRate(parseFloat(e.target.value))
-                  }
+                  onChange={(e) => narration.setRate(parseFloat(e.target.value))}
                   className="w-full h-1.5 bg-border rounded-full appearance-none cursor-pointer accent-olive [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gold [&::-webkit-slider-thumb]:shadow-md"
                 />
                 <div className="flex justify-between mt-1">
-                  <span className="font-body text-[10px] text-muted-foreground/60">
-                    Slow
-                  </span>
-                  <span className="font-body text-[10px] text-muted-foreground/60">
-                    Fast
-                  </span>
+                  <span className="font-body text-[10px] text-muted-foreground/60">Slow</span>
+                  <span className="font-body text-[10px] text-muted-foreground/60">Fast</span>
                 </div>
               </div>
 
@@ -156,18 +145,12 @@ export default function NarrationControls({
                   max="2.0"
                   step="0.1"
                   value={narration.pitch}
-                  onChange={(e) =>
-                    narration.setPitch(parseFloat(e.target.value))
-                  }
+                  onChange={(e) => narration.setPitch(parseFloat(e.target.value))}
                   className="w-full h-1.5 bg-border rounded-full appearance-none cursor-pointer accent-olive [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gold [&::-webkit-slider-thumb]:shadow-md"
                 />
                 <div className="flex justify-between mt-1">
-                  <span className="font-body text-[10px] text-muted-foreground/60">
-                    Deep
-                  </span>
-                  <span className="font-body text-[10px] text-muted-foreground/60">
-                    High
-                  </span>
+                  <span className="font-body text-[10px] text-muted-foreground/60">Deep</span>
+                  <span className="font-body text-[10px] text-muted-foreground/60">High</span>
                 </div>
               </div>
             </motion.div>

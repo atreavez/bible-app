@@ -12,23 +12,18 @@ function getBestVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
 
-  // Priority ranking for natural-sounding English voices
   const priorities = [
-    // Google's premium voices (Chrome)
     (v: SpeechSynthesisVoice) =>
       /google.*uk/i.test(v.name) && v.lang.startsWith("en"),
     (v: SpeechSynthesisVoice) =>
       /google.*us/i.test(v.name) && v.lang.startsWith("en"),
     (v: SpeechSynthesisVoice) =>
       /google/i.test(v.name) && v.lang.startsWith("en"),
-    // Microsoft neural voices (Edge)
     (v: SpeechSynthesisVoice) =>
       /microsoft.*online/i.test(v.name) && v.lang.startsWith("en"),
     (v: SpeechSynthesisVoice) =>
       /microsoft/i.test(v.name) && v.lang.startsWith("en"),
-    // Apple enhanced voices (Safari)
     (v: SpeechSynthesisVoice) => /samantha|daniel|karen|moira/i.test(v.name),
-    // Any English voice
     (v: SpeechSynthesisVoice) => v.lang.startsWith("en"),
   ];
 
@@ -40,6 +35,8 @@ function getBestVoice(): SpeechSynthesisVoice | null {
   return voices[0];
 }
 
+export type NarrationHandle = ReturnType<typeof useNarration>;
+
 export function useNarration() {
   const [state, setState] = useState<NarrationState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -47,8 +44,9 @@ export function useNarration() {
   const [pitch, setPitch] = useState(1.0);
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const [currentChunkIndex, setCurrentChunkIndex] = useState<number | null>(null);
+  const [chunks, setChunks] = useState<string[]>([]);
 
-  // Load voices (they load async in Chrome)
   useEffect(() => {
     const loadVoices = () => {
       if (window.speechSynthesis.getVoices().length > 0) {
@@ -66,16 +64,12 @@ export function useNarration() {
   const speak = useCallback(
     (text: string) => {
       if (!window.speechSynthesis) {
-        console.warn("SpeechSynthesis not available in this browser context");
-        setError(
-          "Speech is not available in this browser. Try opening the published site directly.",
-        );
+        setError("Speech is not available in this browser. Try opening the published site directly.");
         return;
       }
 
       window.speechSynthesis.cancel();
 
-      // Strip markdown formatting for cleaner speech
       const cleanText = text
         .replace(/[#*_~`>]/g, "")
         .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
@@ -85,36 +79,39 @@ export function useNarration() {
 
       if (!cleanText) {
         setError("No text to read aloud.");
-        console.warn("No text to read aloud.");
+        setChunks([]);
+        setCurrentChunkIndex(null);
         return;
       }
 
       setError(null);
 
-      // Split text into sentences or chunks (max 200 chars per chunk)
       const sentenceRegex = /[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g;
       const sentences = cleanText.match(sentenceRegex) || [cleanText];
-      const chunks = [];
+      const chunkArr: string[] = [];
       let current = "";
       for (const sentence of sentences) {
         if ((current + sentence).length > 200 && current.length > 0) {
-          chunks.push(current);
+          chunkArr.push(current);
           current = sentence;
         } else {
           current += sentence;
         }
       }
-      if (current.length > 0) chunks.push(current);
+      if (current.length > 0) chunkArr.push(current);
 
+      setChunks(chunkArr);
       let chunkIndex = 0;
+      setCurrentChunkIndex(0);
 
       const speakChunk = () => {
-        if (chunkIndex >= chunks.length) {
+        if (chunkIndex >= chunkArr.length) {
           setState("idle");
-          console.log("Speech ended");
+          setCurrentChunkIndex(null);
           return;
         }
-        const chunk = chunks[chunkIndex];
+        setCurrentChunkIndex(chunkIndex);
+        const chunk = chunkArr[chunkIndex];
         const utterance = new SpeechSynthesisUtterance(chunk);
         const voice = getBestVoice();
         if (voice) utterance.voice = voice;
@@ -124,52 +121,37 @@ export function useNarration() {
 
         utterance.onstart = () => {
           setState("speaking");
-          console.log(
-            `Speech started (chunk ${chunkIndex + 1}/${chunks.length})`,
-          );
+          setCurrentChunkIndex(chunkIndex);
         };
         utterance.onend = () => {
           chunkIndex++;
+          setCurrentChunkIndex(chunkIndex);
           speakChunk();
         };
         utterance.onerror = (e) => {
           setState("idle");
-          console.error("Speech synthesis error:", e);
+          setCurrentChunkIndex(null);
           if (e.error === "not-allowed") {
-            setError(
-              "Speech blocked by browser. Try the published site or click again after a user gesture.",
-            );
-          } else {
-            setError("Speech synthesis error: " + e.error);
+            setError("Speech blocked by browser. Try the published site or click again after a user gesture.");
           }
         };
-        utterance.onpause = () => {
-          setState("paused");
-          console.log("Speech paused");
-        };
+        utterance.onpause = () => setState("paused");
         utterance.onresume = () => {
           setState("speaking");
-          console.log("Speech resumed");
+          setCurrentChunkIndex(chunkIndex);
         };
 
         utteranceRef.current = utterance;
         window.speechSynthesis.speak(utterance);
-        console.log("Speech synthesis invoked (chunk)");
       };
 
       speakChunk();
     },
-    [rate, pitch],
+    [rate, pitch]
   );
 
-  const pause = useCallback(() => {
-    window.speechSynthesis.pause();
-  }, []);
-
-  const resume = useCallback(() => {
-    window.speechSynthesis.resume();
-  }, []);
-
+  const pause = useCallback(() => window.speechSynthesis.pause(), []);
+  const resume = useCallback(() => window.speechSynthesis.resume(), []);
   const stop = useCallback(() => {
     window.speechSynthesis.cancel();
     setState("idle");
@@ -177,15 +159,11 @@ export function useNarration() {
 
   const toggle = useCallback(
     (text: string) => {
-      if (state === "speaking") {
-        pause();
-      } else if (state === "paused") {
-        resume();
-      } else {
-        speak(text);
-      }
+      if (state === "speaking") pause();
+      else if (state === "paused") resume();
+      else speak(text);
     },
-    [state, speak, pause, resume],
+    [state, speak, pause, resume]
   );
 
   return {
@@ -204,5 +182,7 @@ export function useNarration() {
     isSpeaking: state === "speaking",
     isPaused: state === "paused",
     isIdle: state === "idle",
+    currentChunkIndex,
+    chunks,
   };
 }

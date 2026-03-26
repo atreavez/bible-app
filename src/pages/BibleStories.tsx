@@ -1,14 +1,80 @@
 import { useState, useCallback } from "react";
+import { useNarration, type NarrationHandle } from "@/hooks/useNarration";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, BookOpen, ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
 import Navbar from "@/components/Navbar";
 import ScrollReveal from "@/components/ScrollReveal";
 import NarrationControls from "@/components/NarrationControls";
 import OrnamentDivider from "@/components/OrnamentDivider";
 import { bibleStories } from "@/lib/bibleData";
-import { supabase } from "@/integrations/supabase/client";
+
+function NarrativeWithGlow({
+  text,
+  isGenerating,
+  narration,
+}: {
+  text: string;
+  isGenerating: boolean;
+  narration: NarrationHandle;
+}) {
+  const sentenceRegex = /[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g;
+  const cleanText = text
+    .replace(/[#*_~`>]/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\n{2,}/g, ". ")
+    .replace(/\n/g, " ")
+    .trim();
+  const sentences = cleanText.match(sentenceRegex) || [cleanText];
+
+  const chunks: string[] = [];
+  let current = "";
+  for (const sentence of sentences) {
+    if ((current + sentence).length > 200 && current.length > 0) {
+      chunks.push(current);
+      current = sentence;
+    } else {
+      current += sentence;
+    }
+  }
+  if (current.length > 0) chunks.push(current);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="mt-8 ornate-border rounded-2xl bg-parchment/50 p-6 md:p-8"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <Sparkles className="w-4 h-4 text-gold" />
+        <span className="font-display text-sm font-semibold text-olive tracking-wide">
+          AI-Generated Narrative
+        </span>
+      </div>
+      <div className="font-body text-base leading-relaxed text-foreground/80 prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/80">
+        {chunks.map((chunk, idx) => (
+          <span
+            key={idx}
+            className={
+              narration.currentChunkIndex === idx && narration.isSpeaking
+                ? "glow-chunk"
+                : undefined
+            }
+            style={{ display: "inline" }}
+          >
+            {chunk + " "}
+          </span>
+        ))}
+      </div>
+      {isGenerating && (
+        <div className="mt-4 flex items-center gap-2 text-gold">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="font-body text-xs">Writing...</span>
+        </div>
+      )}
+    </motion.div>
+  );
+}
 
 export default function BibleStories() {
   const [selectedStory, setSelectedStory] = useState<string | null>(null);
@@ -16,12 +82,13 @@ export default function BibleStories() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedStories, setGeneratedStories] = useState<Record<string, string>>({});
 
+  const narration = useNarration();
+
   const activeStory = bibleStories.find((s) => s.id === selectedStory);
 
   const generateStory = useCallback(async () => {
     if (!activeStory) return;
 
-    // Check cache
     if (generatedStories[activeStory.id]) {
       setAiNarrative(generatedStories[activeStory.id]);
       return;
@@ -155,29 +222,12 @@ export default function BibleStories() {
                     {activeStory.description}
                   </p>
 
-                  {/* AI Narrative */}
                   {aiNarrative ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="mt-8 ornate-border rounded-2xl bg-parchment/50 p-6 md:p-8"
-                    >
-                      <div className="flex items-center gap-2 mb-4">
-                        <Sparkles className="w-4 h-4 text-gold" />
-                        <span className="font-display text-sm font-semibold text-olive tracking-wide">
-                          AI-Generated Narrative
-                        </span>
-                      </div>
-                      <div className="font-body text-base leading-relaxed text-foreground/80 prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/80">
-                        <ReactMarkdown>{aiNarrative}</ReactMarkdown>
-                      </div>
-                      {isGenerating && (
-                        <div className="mt-4 flex items-center gap-2 text-gold">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span className="font-body text-xs">Writing...</span>
-                        </div>
-                      )}
-                    </motion.div>
+                    <NarrativeWithGlow
+                      text={aiNarrative}
+                      isGenerating={isGenerating}
+                      narration={narration}
+                    />
                   ) : null}
 
                   <div className="mt-8 flex flex-wrap gap-4">
@@ -196,9 +246,11 @@ export default function BibleStories() {
                       {aiNarrative ? "Regenerate Story" : "Generate AI Narrative"}
                     </motion.button>
 
-                    {/* Narrate button - only when story text exists */}
                     {aiNarrative && !isGenerating && (
-                      <NarrationControls getText={() => aiNarrative} />
+                      <NarrationControls
+                        narration={narration}
+                        getText={() => aiNarrative}
+                      />
                     )}
 
                     <Link

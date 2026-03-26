@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, BookOpen, ArrowLeft, Loader2 } from "lucide-react";
+import { Sparkles, BookOpen, ArrowLeft, Loader2, Volume2, Pause, VolumeX } from "lucide-react";
 import { Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import Navbar from "@/components/Navbar";
@@ -8,12 +8,14 @@ import ScrollReveal from "@/components/ScrollReveal";
 import OrnamentDivider from "@/components/OrnamentDivider";
 import { bibleStories } from "@/lib/bibleData";
 import { supabase } from "@/integrations/supabase/client";
+import { useNarration } from "@/hooks/useNarration";
 
 export default function BibleStories() {
   const [selectedStory, setSelectedStory] = useState<string | null>(null);
   const [aiNarrative, setAiNarrative] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedStories, setGeneratedStories] = useState<Record<string, string>>({});
+  const narration = useNarration();
 
   const activeStory = bibleStories.find((s) => s.id === selectedStory);
 
@@ -128,6 +130,7 @@ export default function BibleStories() {
             >
               <button
                 onClick={() => {
+                  narration.stop();
                   setSelectedStory(null);
                   setAiNarrative("");
                 }}
@@ -193,6 +196,38 @@ export default function BibleStories() {
                       )}
                       {aiNarrative ? "Regenerate Story" : "Generate AI Narrative"}
                     </motion.button>
+
+                    {/* Narrate button - only when story text exists */}
+                    {aiNarrative && !isGenerating && (
+                      <div className="flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => narration.toggle(aiNarrative)}
+                          className={`ornate-border-hover px-6 py-3 font-display text-sm tracking-wide rounded-2xl flex items-center gap-2 transition-all duration-300 ${
+                            narration.isSpeaking
+                              ? "bg-olive text-primary-foreground"
+                              : narration.isPaused
+                              ? "bg-gold/80 text-earth"
+                              : "bg-card text-foreground hover:text-olive"
+                          }`}
+                        >
+                          {narration.isSpeaking ? <Pause className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                          {narration.isSpeaking ? "Pause" : narration.isPaused ? "Resume" : "Listen to Story"}
+                        </motion.button>
+                        {!narration.isIdle && (
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={narration.stop}
+                            className="ornate-border-hover px-4 py-3 bg-card text-foreground hover:text-destructive font-display text-sm rounded-2xl flex items-center gap-2 transition-all duration-300"
+                          >
+                            <VolumeX className="w-4 h-4" />
+                          </motion.button>
+                        )}
+                      </div>
+                    )}
+
                     <Link
                       to="/read"
                       className="ornate-border-hover px-6 py-3 bg-olive/90 hover:bg-olive text-primary-foreground font-display text-sm tracking-wide rounded-2xl flex items-center gap-2 transition-all duration-300"

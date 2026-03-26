@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Menu, X, Search, Bookmark, Sun, Sparkles } from "lucide-react";
+import { BookOpen, Menu, X, Moon, Sun } from "lucide-react";
+import { useDarkMode } from "@/hooks/useDarkMode";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -15,6 +16,7 @@ const navLinks = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { isDark, toggle: toggleDark } = useDarkMode();
 
   return (
     <motion.nav
@@ -50,13 +52,22 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Mobile toggle */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="md:hidden w-9 h-9 rounded-lg bg-earth/30 border border-gold/10 flex items-center justify-center text-earth-foreground/80 hover:text-gold transition-colors"
-        >
-          {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-        </button>
+        {/* Dark mode toggle + Mobile toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleDark}
+            className="w-9 h-9 rounded-lg bg-earth/30 border border-gold/10 flex items-center justify-center text-earth-foreground/80 hover:text-gold transition-all duration-300"
+            aria-label="Toggle dark mode"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={() => setOpen(!open)}
+            className="md:hidden w-9 h-9 rounded-lg bg-earth/30 border border-gold/10 flex items-center justify-center text-earth-foreground/80 hover:text-gold transition-colors"
+          >
+            {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}

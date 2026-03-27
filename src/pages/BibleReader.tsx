@@ -16,8 +16,10 @@ import OrnamentDivider from "@/components/OrnamentDivider";
 import {
   bibleBooks,
   translations,
+  translationLanguages,
   fetchBibleText,
   type BibleBook,
+  type TranslationLanguage,
 } from "@/lib/bibleData";
 
 export default function BibleReader() {
@@ -30,6 +32,11 @@ const [loading, setLoading] = useState(false);
 const { addBookmark, isBookmarked } = useBookmarks();
 const [searchQuery, setSearchQuery] = useState("");
 const [activeTestament, setActiveTestament] = useState<"old" | "new">("old");
+const [selectedLanguage, setSelectedLanguage] = useState<TranslationLanguage>("All");
+
+const filteredTranslations = selectedLanguage === "All"
+  ? translations
+  : translations.filter((t) => t.language === selectedLanguage);
 
 const loadChapter = useCallback(async () => {
   setLoading(true);
@@ -74,6 +81,36 @@ return (
         {/* Sidebar */}
         <div className="lg:w-72 flex-shrink-0">
           <div className="ornate-border rounded-2xl bg-card/80 overflow-hidden">
+            {/* Language Filter */}
+            <div className="p-4 border-b border-border">
+              <label className="font-body text-xs uppercase tracking-widest text-muted-foreground">
+                Language
+              </label>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {translationLanguages.map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => {
+                      setSelectedLanguage(lang);
+                      if (lang !== "All") {
+                        const available = translations.filter((t) => t.language === lang);
+                        if (available.length > 0 && !available.find((t) => t.id === selectedTranslation.id)) {
+                          setSelectedTranslation(available[0]);
+                        }
+                      }
+                    }}
+                    className={`px-2.5 py-1 rounded-lg font-body text-xs transition-all duration-200 ${
+                      selectedLanguage === lang
+                        ? "bg-olive text-primary-foreground"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Translation */}
             <div className="p-4 border-b border-border">
               <label className="font-body text-xs uppercase tracking-widest text-muted-foreground">
@@ -87,7 +124,7 @@ return (
                 }}
                 className="mt-2 w-full bg-background border border-border rounded-xl px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gold/30"
               >
-                {translations.map((t) => (
+                {filteredTranslations.map((t) => (
                   <option key={t.id + t.abbreviation} value={t.id}>
                     {t.abbreviation} — {t.name}
                   </option>

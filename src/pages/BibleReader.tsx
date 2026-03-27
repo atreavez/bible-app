@@ -16,8 +16,10 @@ import OrnamentDivider from "@/components/OrnamentDivider";
 import {
   bibleBooks,
   translations,
+  translationLanguages,
   fetchBibleText,
   type BibleBook,
+  type TranslationLanguage,
 } from "@/lib/bibleData";
 
 export default function BibleReader() {

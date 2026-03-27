@@ -82,34 +82,48 @@ export interface Translation {
   name: string;
   abbreviation: string;
   source: "bible-api" | "helloao";
+  language: string;
 }
+
+export const translationLanguages = [
+  "All",
+  "English",
+  "Portuguese",
+  "Spanish",
+  "Cherokee",
+  "Latin",
+  "Chinese",
+  "Czech",
+] as const;
+
+export type TranslationLanguage = (typeof translationLanguages)[number];
 
 export const translations: Translation[] = [
   // bible-api.com translations
-  { id: "kjv", name: "King James Version", abbreviation: "KJV", source: "bible-api" },
-  { id: "web", name: "World English Bible", abbreviation: "WEB", source: "bible-api" },
-  { id: "bbe", name: "Bible in Basic English", abbreviation: "BBE", source: "bible-api" },
-  { id: "asv", name: "American Standard Version", abbreviation: "ASV", source: "bible-api" },
-  { id: "ylt", name: "Young's Literal Translation", abbreviation: "YLT", source: "bible-api" },
-  { id: "darby", name: "Darby Bible", abbreviation: "DARBY", source: "bible-api" },
-  { id: "dra", name: "Douay-Rheims 1899 American Edition", abbreviation: "DRA", source: "bible-api" },
-  { id: "webbe", name: "World English Bible (British)", abbreviation: "WEBBE", source: "bible-api" },
-  { id: "oeb-us", name: "Open English Bible (US)", abbreviation: "OEB-US", source: "bible-api" },
-  { id: "oeb-cw", name: "Open English Bible (CW)", abbreviation: "OEB-CW", source: "bible-api" },
-  { id: "almeida", name: "João Ferreira de Almeida", abbreviation: "JFA", source: "bible-api" },
-  { id: "rva", name: "Reina Valera", abbreviation: "RVA", source: "bible-api" },
-  { id: "cherokee", name: "Cherokee New Testament", abbreviation: "CHR", source: "bible-api" },
-  { id: "clementine", name: "Clementine Latin Vulgate", abbreviation: "VULG", source: "bible-api" },
-  { id: "cuv", name: "Chinese Union Version", abbreviation: "CUV", source: "bible-api" },
-  { id: "bkr", name: "Bible Kralická (Czech)", abbreviation: "BKR", source: "bible-api" },
+  { id: "kjv", name: "King James Version", abbreviation: "KJV", source: "bible-api", language: "English" },
+  { id: "web", name: "World English Bible", abbreviation: "WEB", source: "bible-api", language: "English" },
+  { id: "bbe", name: "Bible in Basic English", abbreviation: "BBE", source: "bible-api", language: "English" },
+  { id: "asv", name: "American Standard Version", abbreviation: "ASV", source: "bible-api", language: "English" },
+  { id: "ylt", name: "Young's Literal Translation", abbreviation: "YLT", source: "bible-api", language: "English" },
+  { id: "darby", name: "Darby Bible", abbreviation: "DARBY", source: "bible-api", language: "English" },
+  { id: "dra", name: "Douay-Rheims 1899 American Edition", abbreviation: "DRA", source: "bible-api", language: "English" },
+  { id: "webbe", name: "World English Bible (British)", abbreviation: "WEBBE", source: "bible-api", language: "English" },
+  { id: "oeb-us", name: "Open English Bible (US)", abbreviation: "OEB-US", source: "bible-api", language: "English" },
+  { id: "oeb-cw", name: "Open English Bible (CW)", abbreviation: "OEB-CW", source: "bible-api", language: "English" },
+  { id: "almeida", name: "João Ferreira de Almeida", abbreviation: "JFA", source: "bible-api", language: "Portuguese" },
+  { id: "rva", name: "Reina Valera", abbreviation: "RVA", source: "bible-api", language: "Spanish" },
+  { id: "cherokee", name: "Cherokee New Testament", abbreviation: "CHR", source: "bible-api", language: "Cherokee" },
+  { id: "clementine", name: "Clementine Latin Vulgate", abbreviation: "VULG", source: "bible-api", language: "Latin" },
+  { id: "cuv", name: "Chinese Union Version", abbreviation: "CUV", source: "bible-api", language: "Chinese" },
+  { id: "bkr", name: "Bible Kralická (Czech)", abbreviation: "BKR", source: "bible-api", language: "Czech" },
   // bible.helloao.org translations
-  { id: "BSB", name: "Berean Standard Bible", abbreviation: "BSB", source: "helloao" },
-  { id: "BibleWeek", name: "BibleWeek", abbreviation: "BW", source: "helloao" },
-  { id: "FBV", name: "Free Bible Version", abbreviation: "FBV", source: "helloao" },
-  { id: "LSV", name: "Literal Standard Version", abbreviation: "LSV", source: "helloao" },
-  { id: "WMB", name: "World Messianic Bible", abbreviation: "WMB", source: "helloao" },
-  { id: "WMBBE", name: "World Messianic Bible British Ed.", abbreviation: "WMBBE", source: "helloao" },
-  { id: "T4T", name: "Translation for Translators", abbreviation: "T4T", source: "helloao" },
+  { id: "BSB", name: "Berean Standard Bible", abbreviation: "BSB", source: "helloao", language: "English" },
+  { id: "BibleWeek", name: "BibleWeek", abbreviation: "BW", source: "helloao", language: "English" },
+  { id: "FBV", name: "Free Bible Version", abbreviation: "FBV", source: "helloao", language: "English" },
+  { id: "LSV", name: "Literal Standard Version", abbreviation: "LSV", source: "helloao", language: "English" },
+  { id: "WMB", name: "World Messianic Bible", abbreviation: "WMB", source: "helloao", language: "English" },
+  { id: "WMBBE", name: "World Messianic Bible British Ed.", abbreviation: "WMBBE", source: "helloao", language: "English" },
+  { id: "T4T", name: "Translation for Translators", abbreviation: "T4T", source: "helloao", language: "English" },
 ];
 
 export const bibleStories = [

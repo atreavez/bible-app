@@ -33,9 +33,11 @@ const [selectedTranslation, setSelectedTranslation] = useState(translations[0]);
 const [verses, setVerses] = useState<{ verse: number; text: string }[]>([]);
 const [loading, setLoading] = useState(false);
 const { addBookmark, isBookmarked } = useBookmarks();
+const { markChapterRead } = useReadingProgress();
 const [searchQuery, setSearchQuery] = useState("");
 const [activeTestament, setActiveTestament] = useState<"old" | "new">("old");
 const [selectedLanguage, setSelectedLanguage] = useState<TranslationLanguage>("All");
+const [readingTheme, setReadingTheme] = useState("default");
 
 const filteredTranslations = selectedLanguage === "All"
   ? translations

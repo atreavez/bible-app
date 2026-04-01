@@ -51,6 +51,7 @@ const loadChapter = useCallback(async () => {
     selectedChapter,
   );
   setVerses(data.verses);
+  markChapterRead(selectedBook.name, selectedChapter);
   setLoading(false);
 }, [selectedBook, selectedChapter, selectedTranslation]);
 

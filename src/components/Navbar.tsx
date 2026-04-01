@@ -7,10 +7,12 @@ import { useDarkMode } from "@/hooks/useDarkMode";
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/read", label: "Read" },
+  { to: "/chat", label: "AI Study" },
   { to: "/search", label: "Search" },
   { to: "/devotional", label: "Devotional" },
   { to: "/stories", label: "Stories" },
   { to: "/bookmarks", label: "Bookmarks" },
+  { to: "/progress", label: "Progress" },
 ];
 
 export default function Navbar() {

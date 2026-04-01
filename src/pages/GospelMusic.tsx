@@ -113,6 +113,17 @@ export default function GospelMusic() {
           )}
         </AnimatePresence>
 
+        {/* Search Bar */}
+        <div className="relative max-w-md mx-auto mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by title or artist..."
+            className="pl-9 rounded-xl bg-card/80 border-border"
+          />
+        </div>
+
         {/* Category Filter */}
         <div className="flex justify-center gap-2 mb-8 flex-wrap">
           {CATEGORIES.map((cat) => (

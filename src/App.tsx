@@ -12,6 +12,8 @@ import BibleStories from "./pages/BibleStories.tsx";
 import BibleSearch from "./pages/BibleSearch.tsx";
 import DailyDevotional from "./pages/DailyDevotional.tsx";
 import Bookmarks from "./pages/Bookmarks.tsx";
+import BibleChat from "./pages/BibleChat.tsx";
+import Progress from "./pages/Progress.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();

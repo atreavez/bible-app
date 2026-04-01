@@ -300,28 +300,35 @@ return (
                             </span>
                             {v.text}
                           </p>
-                          <button
-                            onClick={() =>
-                              addBookmark({
-                                book: selectedBook.name,
-                                chapter: selectedChapter,
-                                verse: v.verse,
-                                text: v.text,
-                                translation: selectedTranslation.id,
-                              })
-                            }
-                            className={`mt-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300 p-1 rounded-lg hover:bg-gold/10 ${
-                              bookmarked
-                                ? "!opacity-100 text-gold"
-                                : "text-muted-foreground/40 hover:text-gold"
-                            }`}
-                          >
-                            {bookmarked ? (
-                              <BookmarkCheck className="w-4 h-4" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </button>
+                          <div className="flex items-center gap-0.5 mt-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <VerseShareCard
+                              verse={v.text}
+                              reference={`${selectedBook.name} ${selectedChapter}:${v.verse}`}
+                              translation={selectedTranslation.abbreviation}
+                            />
+                            <button
+                              onClick={() =>
+                                addBookmark({
+                                  book: selectedBook.name,
+                                  chapter: selectedChapter,
+                                  verse: v.verse,
+                                  text: v.text,
+                                  translation: selectedTranslation.id,
+                                })
+                              }
+                              className={`p-1 rounded-lg hover:bg-gold/10 ${
+                                bookmarked
+                                  ? "!opacity-100 text-gold"
+                                  : "text-muted-foreground/40 hover:text-gold"
+                              }`}
+                            >
+                              {bookmarked ? (
+                                <BookmarkCheck className="w-4 h-4" />
+                              ) : (
+                                <Bookmark className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
                         </motion.div>
                       );
                     })}

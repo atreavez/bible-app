@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Share2, Download, X, Copy, Check } from "lucide-react";
 
@@ -48,7 +49,7 @@ export default function VerseShareCard({ verse, reference, translation }: VerseS
         <Share2 className="w-4 h-4" />
       </button>
 
-      <AnimatePresence>
+      {createPortal(<AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -120,7 +121,7 @@ export default function VerseShareCard({ verse, reference, translation }: VerseS
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>, document.body)}
     </>
   );
 }

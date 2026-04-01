@@ -220,7 +220,6 @@ export default function BibleSearch() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="group relative"
                   >
                     <div className="ornate-border-hover rounded-2xl bg-card/80 overflow-hidden">
                       {/* Decorative top accent */}

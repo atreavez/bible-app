@@ -49,7 +49,7 @@ export default function VerseShareCard({ verse, reference, translation }: VerseS
         <Share2 className="w-4 h-4" />
       </button>
 
-      <AnimatePresence>
+      {createPortal(<AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0 }}

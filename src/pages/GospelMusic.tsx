@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Music, Play, Heart, ExternalLink } from "lucide-react";
+import { Music, Play, Heart, ExternalLink, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 import GsapReveal from "@/components/GsapReveal";
 import OrnamentDivider from "@/components/OrnamentDivider";

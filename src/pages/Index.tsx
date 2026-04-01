@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Headphones, Sparkles, ArrowRight, Search, Sun, Bookmark } from "lucide-react";
+import { BookOpen, Headphones, Sparkles, ArrowRight, Search, Sun, Bookmark, Bot, Trophy, Share2 } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import heroImage from "@/assets/hero-bible.jpg";

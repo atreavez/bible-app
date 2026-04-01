@@ -51,6 +51,7 @@ function AppContent() {
             <Route path="/bookmarks" element={<Bookmarks />} />
             <Route path="/chat" element={<BibleChat />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/music" element={<GospelMusic />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

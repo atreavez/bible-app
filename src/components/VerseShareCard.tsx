@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Share2, Download, X, Copy, Check } from "lucide-react";
+import html2canvas from "html2canvas";
 
 interface VerseShareCardProps {
   verse: string;
@@ -20,24 +21,50 @@ export default function VerseShareCard({ verse, reference, translation }: VerseS
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState(THEMES[0]);
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const copyText = useCallback(() => {
-    navigator.clipboard.writeText(`"${verse}" — ${reference} (${translation})`);
+    navigator.clipboard.writeText(`"${verse}" — ${reference} (${translation})`).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [verse, reference, translation]);
 
   const shareNative = useCallback(async () => {
-    if (navigator.share) {
-      await navigator.share({
-        title: reference,
-        text: `"${verse}" — ${reference} (${translation})`,
-      });
-    } else {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: reference,
+          text: `"${verse}" — ${reference} (${translation})`,
+        });
+      } else {
+        copyText();
+      }
+    } catch {
+      // Permission denied or user cancelled — fall back to copy
       copyText();
     }
   }, [verse, reference, translation, copyText]);
+
+  const downloadCard = useCallback(async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null,
+      });
+      const link = document.createElement("a");
+      link.download = `${reference.replace(/\s+/g, "-")}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      console.error("Download failed:", err);
+    } finally {
+      setDownloading(false);
+    }
+  }, [reference]);
 
   return (
     <>
@@ -101,7 +128,15 @@ export default function VerseShareCard({ verse, reference, translation }: VerseS
                   className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-card font-body text-sm text-foreground hover:bg-card/80 transition-all ornate-border"
                 >
                   {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                  {copied ? "Copied!" : "Copy Text"}
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+                <button
+                  onClick={downloadCard}
+                  disabled={downloading}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-card font-body text-sm text-foreground hover:bg-card/80 transition-all ornate-border disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4" />
+                  {downloading ? "Saving..." : "Download"}
                 </button>
                 <button
                   onClick={shareNative}

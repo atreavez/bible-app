@@ -121,7 +121,7 @@ export default function VerseShareCard({ verse, reference, translation }: VerseS
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>, document.body)}
     </>
   );
 }

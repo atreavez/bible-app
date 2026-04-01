@@ -42,6 +42,7 @@ const CATEGORIES = ["All", "Worship", "Praise", "Gospel", "Hymns"];
 
 export default function GospelMusic() {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeVideo, setActiveVideo] = useState<PlaylistItem | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     const saved = localStorage.getItem("gospel-favorites");

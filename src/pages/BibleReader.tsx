@@ -8,9 +8,12 @@ import {
   BookmarkCheck,
 } from "lucide-react";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
 import Navbar from "@/components/Navbar";
 import GsapReveal from "@/components/GsapReveal";
 import NarrationControls from "@/components/NarrationControls";
+import AmbientMode from "@/components/AmbientMode";
+import VerseShareCard from "@/components/VerseShareCard";
 import { useNarration } from "@/hooks/useNarration";
 import OrnamentDivider from "@/components/OrnamentDivider";
 import {

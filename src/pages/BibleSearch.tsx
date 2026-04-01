@@ -228,8 +228,8 @@ export default function BibleSearch() {
                       <div className="p-6">
                         <div className="flex items-start gap-4">
                           {/* Verse icon */}
-                          <div className="w-10 h-10 rounded-xl bg-olive/10 border border-gold/10 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-olive/20 group-hover:border-gold/25 transition-all duration-300">
-                            <BookOpen className="w-5 h-5 text-olive group-hover:text-gold transition-colors duration-300" />
+                          <div className="w-10 h-10 rounded-xl bg-olive/10 border border-gold/10 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-300">
+                            <BookOpen className="w-5 h-5 text-olive transition-colors duration-300" />
                           </div>
 
                           <div className="flex-1 min-w-0">

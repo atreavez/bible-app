@@ -18,9 +18,24 @@ const features = [
     description: "Access KJV, WEB, BBE, ASV, Darby, Vulgate and many more — all in one beautiful reading experience.",
   },
   {
+    icon: Bot,
+    title: "AI Bible Study",
+    description: "Ask questions about any verse or passage. Get historical context, cross-references, and deep theological insights powered by AI.",
+  },
+  {
     icon: Headphones,
     title: "Audio Reader",
     description: "Listen to scripture with built-in text-to-speech. Read along or close your eyes and receive the Word.",
+  },
+  {
+    icon: Trophy,
+    title: "Reading Streaks",
+    description: "Track your daily progress, earn achievements, and build a consistent habit of scripture study.",
+  },
+  {
+    icon: Share2,
+    title: "Share Verses",
+    description: "Create beautiful verse cards and share them on social media with customizable themes.",
   },
   {
     icon: Sparkles,

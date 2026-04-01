@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Headphones, Sparkles, ArrowRight, Search, Sun, Bookmark } from "lucide-react";
+import { BookOpen, Headphones, Sparkles, ArrowRight, Search, Sun, Bookmark, Bot, Trophy, Share2 } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import heroImage from "@/assets/hero-bible.jpg";
@@ -18,9 +18,24 @@ const features = [
     description: "Access KJV, WEB, BBE, ASV, Darby, Vulgate and many more — all in one beautiful reading experience.",
   },
   {
+    icon: Bot,
+    title: "AI Bible Study",
+    description: "Ask questions about any verse or passage. Get historical context, cross-references, and deep theological insights powered by AI.",
+  },
+  {
     icon: Headphones,
     title: "Audio Reader",
     description: "Listen to scripture with built-in text-to-speech. Read along or close your eyes and receive the Word.",
+  },
+  {
+    icon: Trophy,
+    title: "Reading Streaks",
+    description: "Track your daily progress, earn achievements, and build a consistent habit of scripture study.",
+  },
+  {
+    icon: Share2,
+    title: "Share Verses",
+    description: "Create beautiful verse cards and share them on social media with customizable themes.",
   },
   {
     icon: Sparkles,
@@ -293,8 +308,10 @@ export default function Index() {
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/read", label: "Read Bible" },
+  { to: "/chat", label: "AI Study" },
   { to: "/search", label: "Search" },
   { to: "/devotional", label: "Devotional" },
   { to: "/stories", label: "AI Stories" },
   { to: "/bookmarks", label: "Bookmarks" },
+  { to: "/progress", label: "Progress" },
 ];

@@ -8,9 +8,12 @@ import {
   BookmarkCheck,
 } from "lucide-react";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
 import Navbar from "@/components/Navbar";
 import GsapReveal from "@/components/GsapReveal";
 import NarrationControls from "@/components/NarrationControls";
+import AmbientMode from "@/components/AmbientMode";
+import VerseShareCard from "@/components/VerseShareCard";
 import { useNarration } from "@/hooks/useNarration";
 import OrnamentDivider from "@/components/OrnamentDivider";
 import {
@@ -30,9 +33,11 @@ const [selectedTranslation, setSelectedTranslation] = useState(translations[0]);
 const [verses, setVerses] = useState<{ verse: number; text: string }[]>([]);
 const [loading, setLoading] = useState(false);
 const { addBookmark, isBookmarked } = useBookmarks();
+const { markChapterRead } = useReadingProgress();
 const [searchQuery, setSearchQuery] = useState("");
 const [activeTestament, setActiveTestament] = useState<"old" | "new">("old");
 const [selectedLanguage, setSelectedLanguage] = useState<TranslationLanguage>("All");
+const [readingTheme, setReadingTheme] = useState("default");
 
 const filteredTranslations = selectedLanguage === "All"
   ? translations
@@ -46,6 +51,7 @@ const loadChapter = useCallback(async () => {
     selectedChapter,
   );
   setVerses(data.verses);
+  markChapterRead(selectedBook.name, selectedChapter);
   setLoading(false);
 }, [selectedBook, selectedChapter, selectedTranslation]);
 
@@ -238,8 +244,9 @@ return (
             </button>
           </div>
 
-          {/* Audio Controls */}
-          <div className="mb-6 flex justify-end">
+          {/* Audio Controls & Ambient Mode */}
+          <div className="mb-6 flex justify-end gap-2">
+            <AmbientMode onThemeChange={setReadingTheme} currentTheme={readingTheme} />
             <NarrationControls
               getText={() => verses.map((v) => v.text).join(" ")}
               narration={narration}
@@ -293,28 +300,35 @@ return (
                             </span>
                             {v.text}
                           </p>
-                          <button
-                            onClick={() =>
-                              addBookmark({
-                                book: selectedBook.name,
-                                chapter: selectedChapter,
-                                verse: v.verse,
-                                text: v.text,
-                                translation: selectedTranslation.id,
-                              })
-                            }
-                            className={`mt-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300 p-1 rounded-lg hover:bg-gold/10 ${
-                              bookmarked
-                                ? "!opacity-100 text-gold"
-                                : "text-muted-foreground/40 hover:text-gold"
-                            }`}
-                          >
-                            {bookmarked ? (
-                              <BookmarkCheck className="w-4 h-4" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </button>
+                          <div className="flex items-center gap-0.5 mt-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <VerseShareCard
+                              verse={v.text}
+                              reference={`${selectedBook.name} ${selectedChapter}:${v.verse}`}
+                              translation={selectedTranslation.abbreviation}
+                            />
+                            <button
+                              onClick={() =>
+                                addBookmark({
+                                  book: selectedBook.name,
+                                  chapter: selectedChapter,
+                                  verse: v.verse,
+                                  text: v.text,
+                                  translation: selectedTranslation.id,
+                                })
+                              }
+                              className={`p-1 rounded-lg hover:bg-gold/10 ${
+                                bookmarked
+                                  ? "!opacity-100 text-gold"
+                                  : "text-muted-foreground/40 hover:text-gold"
+                              }`}
+                            >
+                              {bookmarked ? (
+                                <BookmarkCheck className="w-4 h-4" />
+                              ) : (
+                                <Bookmark className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
                         </motion.div>
                       );
                     })}

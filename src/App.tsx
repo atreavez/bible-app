@@ -12,6 +12,8 @@ import BibleStories from "./pages/BibleStories.tsx";
 import BibleSearch from "./pages/BibleSearch.tsx";
 import DailyDevotional from "./pages/DailyDevotional.tsx";
 import Bookmarks from "./pages/Bookmarks.tsx";
+import BibleChat from "./pages/BibleChat.tsx";
+import Progress from "./pages/Progress.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -46,6 +48,8 @@ function AppContent() {
             <Route path="/search" element={<BibleSearch />} />
             <Route path="/devotional" element={<DailyDevotional />} />
             <Route path="/bookmarks" element={<Bookmarks />} />
+            <Route path="/chat" element={<BibleChat />} />
+            <Route path="/progress" element={<Progress />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

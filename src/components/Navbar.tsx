@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Menu, X, Moon, Sun } from "lucide-react";
+import { BookOpen, Menu, X, Moon, Sun, Bot, Trophy } from "lucide-react";
 import { useDarkMode } from "@/hooks/useDarkMode";
 
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/read", label: "Read" },
+  { to: "/chat", label: "AI Study" },
   { to: "/search", label: "Search" },
   { to: "/devotional", label: "Devotional" },
   { to: "/stories", label: "Stories" },
   { to: "/bookmarks", label: "Bookmarks" },
+  { to: "/progress", label: "Progress" },
 ];
 
 export default function Navbar() {

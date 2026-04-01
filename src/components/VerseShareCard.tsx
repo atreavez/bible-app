@@ -160,3 +160,5 @@ export default function VerseShareCard({ verse, reference, translation }: VerseS
     </>
   );
 }
+
+

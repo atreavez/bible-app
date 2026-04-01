@@ -1,6 +1,14 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Music, X, Volume2, VolumeX } from "lucide-react";
+import { Music, X } from "lucide-react";
+
+const AMBIENCE_SOUNDS: Record<string, string> = {
+  rain: "https://cdn.freesound.org/previews/531/531947_6474845-lq.mp3",
+  fire: "https://cdn.freesound.org/previews/277/277021_4486188-lq.mp3",
+  forest: "https://cdn.freesound.org/previews/462/462087_8386274-lq.mp3",
+  ocean: "https://cdn.freesound.org/previews/467/467539_5765668-lq.mp3",
+  wind: "https://cdn.freesound.org/previews/243/243627_4486188-lq.mp3",
+};
 
 const AMBIENCES = [
   { id: "none", label: "Off", icon: "🔇" },
@@ -26,15 +34,53 @@ interface AmbientModeProps {
 export default function AmbientMode({ onThemeChange, currentTheme = "default" }: AmbientModeProps) {
   const [open, setOpen] = useState(false);
   const [activeAmbience, setActiveAmbience] = useState("none");
+  const [volume, setVolume] = useState(0.5);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+  }, []);
+
+  const playAmbience = useCallback((id: string) => {
+    stopAudio();
+    setActiveAmbience(id);
+
+    if (id === "none" || !AMBIENCE_SOUNDS[id]) return;
+
+    const audio = new Audio(AMBIENCE_SOUNDS[id]);
+    audio.loop = true;
+    audio.volume = volume;
+    audio.play().catch((err) => console.warn("Audio playback failed:", err));
+    audioRef.current = audio;
+  }, [volume, stopAudio]);
+
+  // Update volume on existing audio
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => stopAudio();
+  }, [stopAudio]);
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="p-2.5 rounded-xl hover:bg-parchment-dark/50 transition-all duration-300 group"
+        className="p-2.5 rounded-xl hover:bg-parchment-dark/50 transition-all duration-300 group relative"
         title="Ambient Mode"
       >
         <Music className="w-5 h-5 text-foreground group-hover:text-olive transition-colors" />
+        {activeAmbience !== "none" && (
+          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-gold animate-pulse" />
+        )}
       </button>
 
       <AnimatePresence>
@@ -89,7 +135,7 @@ export default function AmbientMode({ onThemeChange, currentTheme = "default" }:
                 {AMBIENCES.map((a) => (
                   <button
                     key={a.id}
-                    onClick={() => setActiveAmbience(a.id)}
+                    onClick={() => playAmbience(a.id)}
                     className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl font-body text-xs transition-all duration-200 border ${
                       activeAmbience === a.id
                         ? "border-gold bg-olive/10 text-foreground"
@@ -101,6 +147,22 @@ export default function AmbientMode({ onThemeChange, currentTheme = "default" }:
                   </button>
                 ))}
               </div>
+
+              {/* Volume slider */}
+              {activeAmbience !== "none" && (
+                <div className="mt-4 flex items-center gap-3">
+                  <span className="font-body text-xs text-muted-foreground">Volume</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    className="flex-1 h-1.5 rounded-full accent-gold cursor-pointer"
+                  />
+                </div>
+              )}
 
               <p className="font-body text-xs text-muted-foreground/60 mt-4 text-center italic">
                 Ambient sounds create a peaceful reading atmosphere

@@ -12,6 +12,7 @@ const navLinks = [
   { to: "/devotional", label: "Devotional" },
   { to: "/stories", label: "Stories" },
   { to: "/bookmarks", label: "Bookmarks" },
+  { to: "/music", label: "Music" },
   { to: "/progress", label: "Progress" },
 ];
 

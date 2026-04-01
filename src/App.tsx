@@ -14,6 +14,7 @@ import DailyDevotional from "./pages/DailyDevotional.tsx";
 import Bookmarks from "./pages/Bookmarks.tsx";
 import BibleChat from "./pages/BibleChat.tsx";
 import Progress from "./pages/Progress.tsx";
+import GospelMusic from "./pages/GospelMusic.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();

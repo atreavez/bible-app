@@ -244,8 +244,9 @@ return (
             </button>
           </div>
 
-          {/* Audio Controls */}
-          <div className="mb-6 flex justify-end">
+          {/* Audio Controls & Ambient Mode */}
+          <div className="mb-6 flex justify-end gap-2">
+            <AmbientMode onThemeChange={setReadingTheme} currentTheme={readingTheme} />
             <NarrationControls
               getText={() => verses.map((v) => v.text).join(" ")}
               narration={narration}

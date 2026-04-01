@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Music, Play, Heart, ExternalLink } from "lucide-react";
+import { Music, Play, Heart, ExternalLink, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 import GsapReveal from "@/components/GsapReveal";
 import OrnamentDivider from "@/components/OrnamentDivider";
@@ -41,6 +42,7 @@ const CATEGORIES = ["All", "Worship", "Praise", "Gospel", "Hymns"];
 
 export default function GospelMusic() {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeVideo, setActiveVideo] = useState<PlaylistItem | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     const saved = localStorage.getItem("gospel-favorites");
@@ -57,10 +59,14 @@ export default function GospelMusic() {
     });
   };
 
-  const filtered =
-    activeCategory === "All"
-      ? PLAYLISTS
-      : PLAYLISTS.filter((p) => p.category === activeCategory);
+  const filtered = useMemo(() => {
+    let list = activeCategory === "All" ? PLAYLISTS : PLAYLISTS.filter((p) => p.category === activeCategory);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
+    }
+    return list;
+  }, [activeCategory, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background scrollbar-ornate">
@@ -106,6 +112,17 @@ export default function GospelMusic() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Search Bar */}
+        <div className="relative max-w-md mx-auto mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by title or artist..."
+            className="pl-9 rounded-xl bg-card/80 border-border"
+          />
+        </div>
 
         {/* Category Filter */}
         <div className="flex justify-center gap-2 mb-8 flex-wrap">

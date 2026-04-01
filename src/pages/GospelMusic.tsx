@@ -59,10 +59,14 @@ export default function GospelMusic() {
     });
   };
 
-  const filtered =
-    activeCategory === "All"
-      ? PLAYLISTS
-      : PLAYLISTS.filter((p) => p.category === activeCategory);
+  const filtered = useMemo(() => {
+    let list = activeCategory === "All" ? PLAYLISTS : PLAYLISTS.filter((p) => p.category === activeCategory);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
+    }
+    return list;
+  }, [activeCategory, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background scrollbar-ornate">

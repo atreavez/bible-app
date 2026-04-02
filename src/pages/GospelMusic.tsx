@@ -1,11 +1,12 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Music, Play, Heart, ExternalLink, Search, X, Loader2 } from "lucide-react";
+import { Play, Heart, ExternalLink, Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import GsapReveal from "@/components/GsapReveal";
 import OrnamentDivider from "@/components/OrnamentDivider";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PlaylistItem {
   id: string;
@@ -41,41 +42,12 @@ const CURATED: PlaylistItem[] = [
 
 const CATEGORIES = ["All", "Worship", "Praise", "Gospel", "Hymns"];
 
-const PIPED_INSTANCES = [
-  "https://pipedapi.kavin.rocks",
-  "https://pipedapi.adminforge.de",
-  "https://api.piped.projectsegfau.lt",
-];
-
 async function searchYouTube(query: string): Promise<PlaylistItem[]> {
-  for (const instance of PIPED_INSTANCES) {
-    try {
-      const res = await fetch(
-        `${instance}/search?q=${encodeURIComponent(query + " gospel worship")}&filter=music_songs`,
-        { signal: AbortSignal.timeout(6000) }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      const items = (data.items || [])
-        .filter((item: any) => item.url && item.title)
-        .slice(0, 20)
-        .map((item: any, i: number) => {
-          const videoId = item.url?.replace("/watch?v=", "") || "";
-          return {
-            id: `yt-${i}-${videoId}`,
-            title: item.title || "Unknown",
-            artist: item.uploaderName || "Unknown Artist",
-            youtubeId: videoId,
-            thumbnail: item.thumbnail || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-            category: "Search",
-          };
-        });
-      if (items.length > 0) return items;
-    } catch {
-      continue;
-    }
-  }
-  return [];
+  const { data, error } = await supabase.functions.invoke("youtube-search", {
+    body: { query },
+  });
+  if (error || !data?.success) return [];
+  return (data.items || []).map((item: any) => ({ ...item, category: "Search" }));
 }
 
 export default function GospelMusic() {
@@ -85,10 +57,32 @@ export default function GospelMusic() {
   const [searchResults, setSearchResults] = useState<PlaylistItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     const saved = localStorage.getItem("gospel-favorites");
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
+
+  // Local suggestions from curated list
+  const suggestions = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return [];
+    return CURATED.filter(
+      (s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+    ).slice(0, 5);
+  }, [searchQuery]);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
@@ -102,11 +96,8 @@ export default function GospelMusic() {
 
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
-    if (!q) {
-      setSearchResults([]);
-      setHasSearched(false);
-      return;
-    }
+    if (!q) return;
+    setShowSuggestions(false);
     setIsSearching(true);
     setHasSearched(true);
     try {
@@ -123,12 +114,17 @@ export default function GospelMusic() {
     setSearchQuery("");
     setSearchResults([]);
     setHasSearched(false);
+    setShowSuggestions(false);
+  };
+
+  const playSuggestion = (song: PlaylistItem) => {
+    setActiveVideo(song);
+    setShowSuggestions(false);
   };
 
   const filtered = useMemo(() => {
     if (hasSearched) return searchResults;
-    let list = activeCategory === "All" ? CURATED : CURATED.filter((p) => p.category === activeCategory);
-    return list;
+    return activeCategory === "All" ? CURATED : CURATED.filter((p) => p.category === activeCategory);
   }, [activeCategory, hasSearched, searchResults]);
 
   return (
@@ -175,39 +171,102 @@ export default function GospelMusic() {
           )}
         </AnimatePresence>
 
-        {/* Search Bar — now searches YouTube */}
-        <form
-          onSubmit={(e) => { e.preventDefault(); handleSearch(); }}
-          className="relative max-w-lg mx-auto mb-6 flex gap-2"
-        >
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search any gospel song on YouTube..."
-              className="pl-9 pr-9 rounded-xl bg-card/80 border-border"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-              >
-                <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-              </button>
-            )}
-          </div>
-          <Button
-            type="submit"
-            disabled={isSearching || !searchQuery.trim()}
-            className="rounded-xl bg-olive text-primary-foreground hover:bg-olive/90"
+        {/* Search Bar with suggestions */}
+        <div ref={searchRef} className="relative max-w-lg mx-auto mb-6">
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleSearch(); }}
+            className="flex gap-2"
           >
-            {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
-          </Button>
-        </form>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                placeholder="Search any gospel song on YouTube..."
+                className="pl-9 pr-9 rounded-xl bg-card/80 border-border"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              )}
+            </div>
+            <Button
+              type="submit"
+              disabled={isSearching || !searchQuery.trim()}
+              className="rounded-xl bg-olive text-primary-foreground hover:bg-olive/90"
+            >
+              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
+            </Button>
+          </form>
 
-        {/* Category Filter — hidden during search */}
+          {/* Suggestions dropdown */}
+          <AnimatePresence>
+            {showSuggestions && searchQuery.trim() && suggestions.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="absolute z-50 top-full mt-1 w-full bg-card border border-border rounded-xl shadow-lg overflow-hidden"
+              >
+                <p className="px-3 py-1.5 text-xs text-muted-foreground font-body border-b border-border">
+                  From curated collection
+                </p>
+                {suggestions.map((song) => (
+                  <button
+                    key={song.id}
+                    onClick={() => playSuggestion(song)}
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <img
+                      src={song.thumbnail}
+                      alt=""
+                      className="w-10 h-7 rounded object-cover flex-shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-body text-sm text-foreground truncate">{song.title}</p>
+                      <p className="font-body text-xs text-muted-foreground truncate">{song.artist}</p>
+                    </div>
+                    <Play className="w-3 h-3 text-muted-foreground flex-shrink-0 ml-auto" />
+                  </button>
+                ))}
+                <button
+                  onClick={handleSearch}
+                  className="w-full px-3 py-2 text-sm text-olive font-body hover:bg-muted/50 transition-colors text-left border-t border-border flex items-center gap-2"
+                >
+                  <Search className="w-3 h-3" />
+                  Search YouTube for "{searchQuery}"
+                </button>
+              </motion.div>
+            )}
+            {showSuggestions && searchQuery.trim() && suggestions.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="absolute z-50 top-full mt-1 w-full bg-card border border-border rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  onClick={handleSearch}
+                  className="w-full px-3 py-3 text-sm text-olive font-body hover:bg-muted/50 transition-colors text-left flex items-center gap-2"
+                >
+                  <Search className="w-3 h-3" />
+                  Search YouTube for "{searchQuery}"
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Category Filter */}
         {!hasSearched && (
           <div className="flex justify-center gap-2 mb-8 flex-wrap">
             {CATEGORIES.map((cat) => (
@@ -229,9 +288,7 @@ export default function GospelMusic() {
         {hasSearched && (
           <div className="text-center mb-6">
             <p className="text-sm text-muted-foreground font-body">
-              {isSearching
-                ? "Searching YouTube..."
-                : `${searchResults.length} results found`}
+              {isSearching ? "Searching YouTube..." : `${searchResults.length} results found`}
             </p>
             <button onClick={clearSearch} className="text-sm text-olive hover:underline font-body mt-1">
               ← Back to curated collection

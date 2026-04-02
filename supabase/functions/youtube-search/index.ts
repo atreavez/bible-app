@@ -1,16 +1,8 @@
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-const PIPED_INSTANCES = [
-  "https://pipedapi.kavin.rocks",
-  "https://pipedapi.adminforge.de",
-  "https://api.piped.projectsegfau.lt",
-  "https://pipedapi.in.projectsegfau.lt",
-  "https://pipedapi.leptons.xyz",
-];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -20,61 +12,101 @@ Deno.serve(async (req) => {
   try {
     const { query } = await req.json();
 
-    if (!query || typeof query !== "string") {
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
       return new Response(
         JSON.stringify({ success: false, error: "Query is required", items: [] }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const searchQuery = `${query} gospel worship`;
+    const searchQuery = `${query.trim()} gospel worship`;
+    // sp=EgIQAQ%3D%3D filters for videos only
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}&sp=EgIQAQ%3D%3D`;
 
-    for (const instance of PIPED_INSTANCES) {
-      try {
-        const url = `${instance}/search?q=${encodeURIComponent(searchQuery)}&filter=music_songs`;
-        console.log(`Trying ${instance}...`);
-        const res = await fetch(url, {
-          signal: AbortSignal.timeout(8000),
-          headers: { "User-Agent": "Mozilla/5.0" },
-        });
+    console.log("Fetching YouTube search:", searchQuery);
 
-        if (!res.ok) {
-          console.log(`${instance} returned ${res.status}`);
-          continue;
-        }
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      signal: AbortSignal.timeout(10000),
+    });
 
-        const data = await res.json();
-        const items = (data.items || [])
-          .filter((item: any) => item.url && item.title && item.type === "stream")
-          .slice(0, 20)
-          .map((item: any, i: number) => {
-            const videoId = (item.url || "").replace("/watch?v=", "");
-            return {
-              id: `yt-${i}-${videoId}`,
-              title: item.title || "Unknown",
-              artist: item.uploaderName || "Unknown Artist",
-              youtubeId: videoId,
-              thumbnail:
-                item.thumbnail ||
-                `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-              duration: item.duration || 0,
-            };
-          });
-
-        console.log(`${instance} returned ${items.length} results`);
-        return new Response(
-          JSON.stringify({ success: true, items }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      } catch (e) {
-        console.log(`${instance} failed: ${e}`);
-        continue;
-      }
+    if (!res.ok) {
+      console.error("YouTube returned status:", res.status);
+      return new Response(
+        JSON.stringify({ success: true, items: [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // All instances failed — fallback empty
+    const html = await res.text();
+
+    // Extract ytInitialData JSON from the page
+    const match = html.match(/var ytInitialData = ({.*?});<\/script>/s);
+    if (!match) {
+      console.error("Could not find ytInitialData in response");
+      return new Response(
+        JSON.stringify({ success: true, items: [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const data = JSON.parse(match[1]);
+    const sections =
+      data?.contents?.twoColumnSearchResultsRenderer?.primaryContents
+        ?.sectionListRenderer?.contents || [];
+
+    const items: Array<{
+      id: string;
+      title: string;
+      artist: string;
+      youtubeId: string;
+      thumbnail: string;
+      duration: number;
+    }> = [];
+
+    for (const section of sections) {
+      const contents = section?.itemSectionRenderer?.contents || [];
+      for (const item of contents) {
+        const vid = item?.videoRenderer;
+        if (!vid || !vid.videoId) continue;
+
+        const title = vid.title?.runs?.[0]?.text || "Unknown";
+        const author = vid.ownerText?.runs?.[0]?.text || "Unknown Artist";
+        const videoId = vid.videoId;
+        const thumbnail =
+          vid.thumbnail?.thumbnails?.slice(-1)?.[0]?.url ||
+          `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+        // Parse duration from text like "3:45"
+        const durationText = vid.lengthText?.simpleText || "0:00";
+        const parts = durationText.split(":").map(Number);
+        const duration =
+          parts.length === 3
+            ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+            : parts[0] * 60 + (parts[1] || 0);
+
+        items.push({
+          id: `yt-${items.length}-${videoId}`,
+          title,
+          artist: author,
+          youtubeId: videoId,
+          thumbnail,
+          duration,
+        });
+
+        if (items.length >= 20) break;
+      }
+      if (items.length >= 20) break;
+    }
+
+    console.log(`Found ${items.length} results for "${searchQuery}"`);
+
     return new Response(
-      JSON.stringify({ success: true, items: [] }),
+      JSON.stringify({ success: true, items }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

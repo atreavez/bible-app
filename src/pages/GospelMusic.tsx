@@ -16,14 +16,14 @@ interface PlaylistItem {
 }
 
 const PLAYLISTS: PlaylistItem[] = [
-  { id: "1", title: "Graves Into Gardens", artist: "Elevation Worship", youtubeId: "KJ1PjqdgFFk", thumbnail: "https://img.youtube.com/vi/KJ1PjqdgFFk/hqdefault.jpg", category: "Worship" },
-  { id: "2", title: "Way Maker", artist: "Sinach", youtubeId: "n4MpERSbJhQ", thumbnail: "https://img.youtube.com/vi/n4MpERSbJhQ/hqdefault.jpg", category: "Worship" },
-  { id: "3", title: "Goodness of God", artist: "Bethel Music", youtubeId: "wjRMIqmFaWw", thumbnail: "https://img.youtube.com/vi/wjRMIqmFaWw/hqdefault.jpg", category: "Worship" },
-  { id: "4", title: "Oceans", artist: "Hillsong UNITED", youtubeId: "ly9oE5b0KA8", thumbnail: "https://img.youtube.com/vi/ly9oE5b0KA8/hqdefault.jpg", category: "Worship" },
-  { id: "5", title: "Great Are You Lord", artist: "All Sons & Daughters", youtubeId: "PHHuZmMmKGc", thumbnail: "https://img.youtube.com/vi/PHHuZmMmKGc/hqdefault.jpg", category: "Worship" },
-  { id: "6", title: "Holy Spirit", artist: "Francesca Battistelli", youtubeId: "y71TKAE84wA", thumbnail: "https://img.youtube.com/vi/y71TKAE84wA/hqdefault.jpg", category: "Worship" },
+  { id: "1", title: "Graves Into Gardens", artist: "Elevation Worship", youtubeId: "MiBHOQqEpZ8", thumbnail: "https://img.youtube.com/vi/MiBHOQqEpZ8/hqdefault.jpg", category: "Worship" },
+  { id: "2", title: "Way Maker", artist: "Sinach", youtubeId: "QZ3sI_MOVES", thumbnail: "https://img.youtube.com/vi/QZ3sI_MOVES/hqdefault.jpg", category: "Worship" },
+  { id: "3", title: "Goodness of God", artist: "Bethel Music", youtubeId: "EdOSKpMYER4", thumbnail: "https://img.youtube.com/vi/EdOSKpMYER4/hqdefault.jpg", category: "Worship" },
+  { id: "4", title: "Oceans", artist: "Hillsong UNITED", youtubeId: "dy9nwe9_xzw", thumbnail: "https://img.youtube.com/vi/dy9nwe9_xzw/hqdefault.jpg", category: "Worship" },
+  { id: "5", title: "Great Are You Lord", artist: "All Sons & Daughters", youtubeId: "JCNUNiILFVo", thumbnail: "https://img.youtube.com/vi/JCNUNiILFVo/hqdefault.jpg", category: "Worship" },
+  { id: "6", title: "Holy Spirit", artist: "Francesca Battistelli", youtubeId: "6WSTM7e0z4E", thumbnail: "https://img.youtube.com/vi/6WSTM7e0z4E/hqdefault.jpg", category: "Worship" },
   { id: "7", title: "How Great Is Our God", artist: "Chris Tomlin", youtubeId: "KBD18rsVJHk", thumbnail: "https://img.youtube.com/vi/KBD18rsVJHk/hqdefault.jpg", category: "Praise" },
-  { id: "8", title: "Reckless Love", artist: "Cory Asbury", youtubeId: "Sc6SSHuZvQE", thumbnail: "https://img.youtube.com/vi/Sc6SSHuZvQE/hqdefault.jpg", category: "Worship" },
+  { id: "8", title: "Reckless Love", artist: "Cory Asbury", youtubeId: "FiPETYFXLgA", thumbnail: "https://img.youtube.com/vi/FiPETYFXLgA/hqdefault.jpg", category: "Worship" },
   { id: "9", title: "What A Beautiful Name", artist: "Hillsong Worship", youtubeId: "nQWFzMvCfLE", thumbnail: "https://img.youtube.com/vi/nQWFzMvCfLE/hqdefault.jpg", category: "Worship" },
   { id: "10", title: "10,000 Reasons", artist: "Matt Redman", youtubeId: "XtwIT8JjddM", thumbnail: "https://img.youtube.com/vi/XtwIT8JjddM/hqdefault.jpg", category: "Praise" },
   { id: "11", title: "Yes I Will", artist: "Vertical Worship", youtubeId: "P2SDi6VkVXA", thumbnail: "https://img.youtube.com/vi/P2SDi6VkVXA/hqdefault.jpg", category: "Worship" },

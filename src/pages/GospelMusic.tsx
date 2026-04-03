@@ -544,6 +544,12 @@ export default function GospelMusic() {
 
         <OrnamentDivider />
       </div>
+
+      <LyricsPanel
+        song={activeVideo}
+        isOpen={showLyrics}
+        onClose={() => setShowLyrics(false)}
+      />
     </div>
   );
 }

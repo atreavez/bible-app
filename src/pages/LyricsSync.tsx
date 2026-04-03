@@ -447,7 +447,7 @@ export default function LyricsSync() {
                   <p className="font-body text-sm text-muted-foreground text-center max-w-xs">{error}</p>
                   {videoId && (
                     <button
-                      onClick={() => loadCaptions(videoId)}
+                      onClick={() => loadCaptions(videoId, activeSong?.title, activeSong?.artist)}
                       className="font-body text-sm text-olive hover:underline"
                     >
                       Try again

@@ -30,7 +30,11 @@ type CaptionDebug = {
   trackLanguages?: string[];
   selectedTrackLanguage?: string;
   selectedTrackVssId?: string;
-  fetchAttempts?: Array<{ format: string; ok: boolean; parsed: "json3" | "xml" | "none" }>;
+  fetchAttempts?: Array<{
+    format: string;
+    ok: boolean;
+    parsed: "json3" | "xml" | "none";
+  }>;
 };
 
 const decodeHtmlEntities = (value: string): string => {
@@ -118,14 +122,25 @@ const parseJson3Captions = (payload: unknown): CaptionCue[] => {
 
 const fetchCaptionsFromTrack = async (
   track: CaptionTrack,
-): Promise<{ cues: CaptionCue[]; attempts: Array<{ format: string; ok: boolean; parsed: "json3" | "xml" | "none" }> }> => {
+): Promise<{
+  cues: CaptionCue[];
+  attempts: Array<{
+    format: string;
+    ok: boolean;
+    parsed: "json3" | "xml" | "none";
+  }>;
+}> => {
   const urlAttempts = [
     buildUrlWithFmt(track.baseUrl, "json3"),
     buildUrlWithFmt(track.baseUrl, "srv3"),
     track.baseUrl,
   ];
 
-  const attempts: Array<{ format: string; ok: boolean; parsed: "json3" | "xml" | "none" }> = [];
+  const attempts: Array<{
+    format: string;
+    ok: boolean;
+    parsed: "json3" | "xml" | "none";
+  }> = [];
 
   for (const captionsUrl of urlAttempts) {
     try {
@@ -139,13 +154,29 @@ const fetchCaptionsFromTrack = async (
       });
 
       if (!captionsRes.ok) {
-        attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: false, parsed: "none" });
+        attempts.push({
+          format: captionsUrl.includes("fmt=srv3")
+            ? "srv3"
+            : captionsUrl.includes("fmt=json3")
+              ? "json3"
+              : "original",
+          ok: false,
+          parsed: "none",
+        });
         continue;
       }
 
       const body = await captionsRes.text();
       if (!body.trim()) {
-        attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: true, parsed: "none" });
+        attempts.push({
+          format: captionsUrl.includes("fmt=srv3")
+            ? "srv3"
+            : captionsUrl.includes("fmt=json3")
+              ? "json3"
+              : "original",
+          ok: true,
+          parsed: "none",
+        });
         continue;
       }
 
@@ -153,7 +184,15 @@ const fetchCaptionsFromTrack = async (
         const jsonPayload = JSON.parse(body);
         const jsonCues = parseJson3Captions(jsonPayload);
         if (jsonCues.length > 0) {
-          attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: true, parsed: "json3" });
+          attempts.push({
+            format: captionsUrl.includes("fmt=srv3")
+              ? "srv3"
+              : captionsUrl.includes("fmt=json3")
+                ? "json3"
+                : "original",
+            ok: true,
+            parsed: "json3",
+          });
           return { cues: jsonCues, attempts };
         }
       } catch {
@@ -163,14 +202,38 @@ const fetchCaptionsFromTrack = async (
       if (body.includes("<transcript") || body.includes("<text")) {
         const xmlCues = parseXmlCaptions(body);
         if (xmlCues.length > 0) {
-          attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: true, parsed: "xml" });
+          attempts.push({
+            format: captionsUrl.includes("fmt=srv3")
+              ? "srv3"
+              : captionsUrl.includes("fmt=json3")
+                ? "json3"
+                : "original",
+            ok: true,
+            parsed: "xml",
+          });
           return { cues: xmlCues, attempts };
         }
       }
 
-      attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: true, parsed: "none" });
+      attempts.push({
+        format: captionsUrl.includes("fmt=srv3")
+          ? "srv3"
+          : captionsUrl.includes("fmt=json3")
+            ? "json3"
+            : "original",
+        ok: true,
+        parsed: "none",
+      });
     } catch {
-      attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: false, parsed: "none" });
+      attempts.push({
+        format: captionsUrl.includes("fmt=srv3")
+          ? "srv3"
+          : captionsUrl.includes("fmt=json3")
+            ? "json3"
+            : "original",
+        ok: false,
+        parsed: "none",
+      });
       continue;
     }
   }
@@ -366,7 +429,9 @@ Deno.serve(async (req: Request) => {
             videoId,
             title,
             captionTrackCount: tracks.length,
-            trackLanguages: tracks.map((track) => track.languageCode || track.vssId || "unknown"),
+            trackLanguages: tracks.map(
+              (track) => track.languageCode || track.vssId || "unknown",
+            ),
             selectedTrackLanguage: chosenTrack?.languageCode,
             selectedTrackVssId: chosenTrack?.vssId,
             fetchAttempts,
@@ -389,7 +454,9 @@ Deno.serve(async (req: Request) => {
           videoId,
           title,
           captionTrackCount: tracks.length,
-          trackLanguages: tracks.map((track) => track.languageCode || track.vssId || "unknown"),
+          trackLanguages: tracks.map(
+            (track) => track.languageCode || track.vssId || "unknown",
+          ),
           selectedTrackLanguage: chosenTrack?.languageCode,
           selectedTrackVssId: chosenTrack?.vssId,
           fetchAttempts,

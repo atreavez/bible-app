@@ -14,8 +14,15 @@ Deno.serve(async (req) => {
 
     if (!query || typeof query !== "string" || query.trim().length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: "Query is required", items: [] }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: false,
+          error: "Query is required",
+          items: [],
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -25,9 +32,10 @@ Deno.serve(async (req) => {
 
     const year = new Date().getFullYear();
     const normalizedQuery = query.trim();
-    const searchQuery = mode === "trending"
-      ? `${normalizedQuery} gospel music latest trending ${year} this week`
-      : `${normalizedQuery} gospel worship`;
+    const searchQuery =
+      mode === "trending"
+        ? `${normalizedQuery} gospel music latest trending ${year} this week`
+        : `${normalizedQuery} gospel worship`;
     // sp=EgIQAQ%3D%3D filters for videos only
     const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}&sp=EgIQAQ%3D%3D`;
 
@@ -44,10 +52,9 @@ Deno.serve(async (req) => {
 
     if (!res.ok) {
       console.error("YouTube returned status:", res.status);
-      return new Response(
-        JSON.stringify({ success: true, items: [] }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true, items: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const html = await res.text();
@@ -56,10 +63,9 @@ Deno.serve(async (req) => {
     const match = html.match(/var ytInitialData = ({.*?});<\/script>/s);
     if (!match) {
       console.error("Could not find ytInitialData in response");
-      return new Response(
-        JSON.stringify({ success: true, items: [] }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true, items: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = JSON.parse(match[1]);
@@ -113,15 +119,17 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${items.length} results for "${searchQuery}"`);
 
-    return new Response(
-      JSON.stringify({ success: true, items }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, items }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ success: false, error: "Search failed", items: [] }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   }
 });

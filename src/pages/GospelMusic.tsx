@@ -92,6 +92,7 @@ export default function GospelMusic() {
   const [isLoadingTrending, setIsLoadingTrending] = useState(true);
   const [trendingError, setTrendingError] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [showLyrics, setShowLyrics] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     const saved = localStorage.getItem("gospel-favorites");
     return saved ? new Set(JSON.parse(saved)) : new Set();

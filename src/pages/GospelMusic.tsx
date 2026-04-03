@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import GsapReveal from "@/components/GsapReveal";
 import OrnamentDivider from "@/components/OrnamentDivider";
 import { supabase } from "@/integrations/supabase/client";
+import { Capacitor } from "@capacitor/core";
 
 interface PlaylistItem {
   id: string;
@@ -122,6 +123,26 @@ export default function GospelMusic() {
     setShowSuggestions(false);
   };
 
+  const openInYouTubeForBackground = useCallback((song: PlaylistItem) => {
+    const webUrl = `https://www.youtube.com/watch?v=${song.youtubeId}`;
+
+    if (!Capacitor.isNativePlatform()) {
+      window.open(webUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    if (Capacitor.getPlatform() === "ios") {
+      window.location.href = `youtube://www.youtube.com/watch?v=${song.youtubeId}`;
+      setTimeout(() => {
+        window.location.href = webUrl;
+      }, 1200);
+      return;
+    }
+
+    // Android intent tries to open YouTube app first, then falls back to web URL.
+    window.location.href = `intent://www.youtube.com/watch?v=${song.youtubeId}#Intent;package=com.google.android.youtube;scheme=https;end`;
+  }, []);
+
   const filtered = useMemo(() => {
     if (hasSearched) return searchResults;
     return activeCategory === "All" ? CURATED : CURATED.filter((p) => p.category === activeCategory);
@@ -165,6 +186,20 @@ export default function GospelMusic() {
                 </h2>
                 <p className="font-body text-sm text-muted-foreground">
                   {activeVideo.artist}
+                </p>
+                <div className="mt-3 flex justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => openInYouTubeForBackground(activeVideo)}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Background play in YouTube
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground font-body">
+                  Screen-off playback is managed by the YouTube app/browser, not the in-app preview player.
                 </p>
               </div>
             </motion.div>
@@ -356,9 +391,11 @@ export default function GospelMusic() {
                     />
                   </button>
                   <a
-                    href={`https://www.youtube.com/watch?v=${song.youtubeId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openInYouTubeForBackground(song);
+                    }}
                     className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4 text-muted-foreground" />

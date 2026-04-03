@@ -277,6 +277,10 @@ export default function LyricsSync() {
         body: { videoId: id, lang: "en" },
       });
 
+      const resolvedTitle =
+        typeof data?.title === "string" && data.title.trim().length > 0 ? data.title : title;
+      const resolvedArtist = artist || activeSong?.artist || "";
+
       const captionsAvailable = !err && data?.success && Array.isArray(data.cues) && data.cues.length > 0;
 
       if (captionsAvailable) {
@@ -284,10 +288,16 @@ export default function LyricsSync() {
         return;
       }
 
-      console.log("Captions not available, falling back to AI lyrics", { title, artist });
-      if (title) {
+      console.log("Captions not available, falling back to AI lyrics", {
+        title: resolvedTitle,
+        artist: resolvedArtist,
+        functionError: err?.message || null,
+        functionReason: data?.reason || null,
+      });
+
+      if (resolvedTitle) {
         const { data: lyricsData, error: lyricsErr } = await supabase.functions.invoke("song-lyrics", {
-          body: { title, artist: artist || "" },
+          body: { title: resolvedTitle, artist: resolvedArtist },
         });
         if (!lyricsErr && lyricsData?.success && lyricsData.lyrics) {
           const lines = lyricsData.lyrics.split("\n").filter((l: string) => l.trim());
@@ -303,14 +313,14 @@ export default function LyricsSync() {
         }
       }
 
-      setError("No lyrics found for this video. Try a different song.");
+      setError(err?.message ? "Captions were unavailable and backup lyrics could not be loaded." : "No lyrics found for this video. Try a different song.");
     } catch (e) {
       console.error("loadCaptions error:", e);
       setError("Could not fetch lyrics right now. Try again.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activeSong?.artist]);
 
   /* ── Build YT player ─────────────────────────────────── */
 

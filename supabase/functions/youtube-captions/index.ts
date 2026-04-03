@@ -139,6 +139,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const title =
+      (playerResponse as any)?.videoDetails?.title || "YouTube Song";
+
     const captionsData = (playerResponse as any)?.captions
       ?.playerCaptionsTracklistRenderer;
     const tracks = (captionsData?.captionTracks || []) as CaptionTrack[];
@@ -146,12 +149,14 @@ Deno.serve(async (req: Request) => {
     if (!tracks.length) {
       return new Response(
         JSON.stringify({
-          success: false,
-          error: "No caption tracks available for this video",
+          success: true,
+          hasCaptions: false,
+          reason: "no_caption_tracks",
+          title,
+          language: lang,
           cues: [],
         }),
         {
-          status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
@@ -214,9 +219,6 @@ Deno.serve(async (req: Request) => {
         text,
       });
     }
-
-    const title =
-      (playerResponse as any)?.videoDetails?.title || "YouTube Song";
 
     return new Response(
       JSON.stringify({

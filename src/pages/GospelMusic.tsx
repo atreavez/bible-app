@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Heart, ExternalLink, Search, X, Loader2, RefreshCw } from "lucide-react";
+import { Play, Heart, ExternalLink, Search, X, Loader2, RefreshCw, Music2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";

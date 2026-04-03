@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Music4, Search, X, Play, Maximize2, Minimize2, PictureInPicture2 } from "lucide-react";
+import { Loader2, Music4, Search, X, Play, Maximize2, Minimize2, PictureInPicture2, Palette, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,101 @@ type SearchResult = {
   thumbnail: string;
 };
 
+/* ── Color Presets ─────────────────────────────────────── */
+
+type ColorPreset = {
+  id: string;
+  label: string;
+  bg: string;
+  text: string;
+  active: string;
+  glow: string;
+  accent: string;
+};
+
+const COLOR_PRESETS: ColorPreset[] = [
+  {
+    id: "midnight",
+    label: "Midnight",
+    bg: "linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 50%, #0a0a15 100%)",
+    text: "#e0e0ec",
+    active: "#ffffff",
+    glow: "rgba(120, 100, 255, 0.5)",
+    accent: "#7c6aff",
+  },
+  {
+    id: "spotify",
+    label: "Spotify",
+    bg: "linear-gradient(180deg, #121212 0%, #191414 50%, #0d0d0d 100%)",
+    text: "#b3b3b3",
+    active: "#1DB954",
+    glow: "rgba(29, 185, 84, 0.4)",
+    accent: "#1DB954",
+  },
+  {
+    id: "ocean",
+    label: "Ocean",
+    bg: "linear-gradient(180deg, #0a1628 0%, #0d1f3c 50%, #071220 100%)",
+    text: "#8facc8",
+    active: "#00d4ff",
+    glow: "rgba(0, 212, 255, 0.4)",
+    accent: "#00d4ff",
+  },
+  {
+    id: "sunset",
+    label: "Sunset",
+    bg: "linear-gradient(180deg, #1a0a1e 0%, #2d1233 50%, #140818 100%)",
+    text: "#d4a0d8",
+    active: "#ff6b9d",
+    glow: "rgba(255, 107, 157, 0.4)",
+    accent: "#ff6b9d",
+  },
+  {
+    id: "gold",
+    label: "Gold",
+    bg: "linear-gradient(180deg, #1a1508 0%, #2a2210 50%, #121008 100%)",
+    text: "#c4a86c",
+    active: "#ffd700",
+    glow: "rgba(255, 215, 0, 0.4)",
+    accent: "#ffd700",
+  },
+  {
+    id: "forest",
+    label: "Forest",
+    bg: "linear-gradient(180deg, #0a1a0a 0%, #122212 50%, #081208 100%)",
+    text: "#8cb88c",
+    active: "#4ade80",
+    glow: "rgba(74, 222, 128, 0.4)",
+    accent: "#4ade80",
+  },
+  {
+    id: "snow",
+    label: "Snow",
+    bg: "linear-gradient(180deg, #f5f5f7 0%, #eaeaef 50%, #f0f0f5 100%)",
+    text: "#666680",
+    active: "#1a1a2e",
+    glow: "rgba(100, 100, 200, 0.2)",
+    accent: "#5856d6",
+  },
+  {
+    id: "cherry",
+    label: "Cherry",
+    bg: "linear-gradient(180deg, #1a0508 0%, #2d0a10 50%, #140408 100%)",
+    text: "#d88a8a",
+    active: "#ff4757",
+    glow: "rgba(255, 71, 87, 0.4)",
+    accent: "#ff4757",
+  },
+];
+
+const getStoredPreset = (): string => {
+  try {
+    return localStorage.getItem("lyrics-color-preset") || "midnight";
+  } catch {
+    return "midnight";
+  }
+};
+
 /* ── YouTube IFrame API ────────────────────────────────── */
 
 declare global {
@@ -29,13 +124,16 @@ declare global {
         opts: {
           videoId: string;
           playerVars?: Record<string, string | number>;
-          events?: { onReady?: () => void };
+          events?: { onReady?: () => void; onStateChange?: (e: { data: number }) => void };
         },
       ) => {
         destroy: () => void;
         seekTo: (s: number, a?: boolean) => void;
         getCurrentTime: () => number;
+        playVideo: () => void;
+        getPlayerState: () => number;
       };
+      PlayerState: { PLAYING: number; PAUSED: number; ENDED: number };
     };
     onYouTubeIframeAPIReady?: () => void;
   }
@@ -98,10 +196,26 @@ export default function LyricsSync() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentMs, setCurrentMs] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [lyricsMode, setLyricsMode] = useState<"split" | "fullscreen" | "mini">("split");
 
+  /* Color customization */
+  const [selectedPreset, setSelectedPreset] = useState(getStoredPreset);
+  const [showPalette, setShowPalette] = useState(false);
+
+  const activeColors = useMemo(
+    () => COLOR_PRESETS.find((p) => p.id === selectedPreset) || COLOR_PRESETS[0],
+    [selectedPreset],
+  );
+
   const playerHostRef = useRef<HTMLDivElement | null>(null);
-  const playerRef = useRef<{ destroy: () => void; seekTo: (s: number, a?: boolean) => void; getCurrentTime: () => number } | null>(null);
+  const playerRef = useRef<{
+    destroy: () => void;
+    seekTo: (s: number, a?: boolean) => void;
+    getCurrentTime: () => number;
+    playVideo: () => void;
+    getPlayerState: () => number;
+  } | null>(null);
 
   /* ── Search songs ────────────────────────────────────── */
 
@@ -134,7 +248,7 @@ export default function LyricsSync() {
     }
   }, [query]);
 
-  /* Close search results on outside click */
+  /* Close dropdowns on outside click */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
@@ -145,6 +259,13 @@ export default function LyricsSync() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  /* ── Save preset ──────────────────────────────────────── */
+  useEffect(() => {
+    try {
+      localStorage.setItem("lyrics-color-preset", selectedPreset);
+    } catch {}
+  }, [selectedPreset]);
+
   /* ── Load captions (with AI lyrics fallback) ──────────── */
 
   const loadCaptions = useCallback(async (id: string, title?: string, artist?: string) => {
@@ -152,25 +273,22 @@ export default function LyricsSync() {
     setError(null);
     setCues([]);
     try {
-      // Try YouTube captions first
       const { data, error: err } = await supabase.functions.invoke("youtube-captions", {
         body: { videoId: id, lang: "en" },
       });
-      
+
       const captionsAvailable = !err && data?.success && Array.isArray(data.cues) && data.cues.length > 0;
-      
+
       if (captionsAvailable) {
         setCues(data.cues);
         return;
       }
 
-      // Fallback: use AI-generated lyrics
-      console.log("Captions not available, falling back to AI lyrics", { title, artist, err: err?.message });
+      console.log("Captions not available, falling back to AI lyrics", { title, artist });
       if (title) {
         const { data: lyricsData, error: lyricsErr } = await supabase.functions.invoke("song-lyrics", {
           body: { title, artist: artist || "" },
         });
-        console.log("AI lyrics response:", { success: lyricsData?.success, hasLyrics: !!lyricsData?.lyrics, err: lyricsErr?.message });
         if (!lyricsErr && lyricsData?.success && lyricsData.lyrics) {
           const lines = lyricsData.lyrics.split("\n").filter((l: string) => l.trim());
           const interval = 3000;
@@ -208,7 +326,15 @@ export default function LyricsSync() {
     playerHostRef.current.appendChild(mount);
     playerRef.current = new window.YT!.Player(mount, {
       videoId: id,
-      playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
+      playerVars: { autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+      events: {
+        onReady: () => {
+          setIsPlaying(true);
+        },
+        onStateChange: (e: { data: number }) => {
+          setIsPlaying(e.data === 1);
+        },
+      },
     });
   }, []);
 
@@ -236,8 +362,13 @@ export default function LyricsSync() {
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (!playerRef.current) return;
-      setCurrentMs(Math.max(0, Number(playerRef.current.getCurrentTime() || 0) * 1000));
-    }, 200);
+      try {
+        const t = playerRef.current.getCurrentTime();
+        if (typeof t === "number") {
+          setCurrentMs(Math.max(0, t * 1000));
+        }
+      } catch {}
+    }, 150);
     return () => {
       window.clearInterval(timer);
       if (playerRef.current) {
@@ -268,6 +399,60 @@ export default function LyricsSync() {
 
   const isFullscreen = lyricsMode === "fullscreen";
   const isMini = lyricsMode === "mini";
+  const colors = activeColors;
+
+  /* ── Color palette picker ────────────────────────────── */
+  const palettePopup = (
+    <AnimatePresence>
+      {showPalette && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: -8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: -8 }}
+          className="absolute right-0 top-full mt-2 z-50 rounded-2xl p-3 shadow-2xl"
+          style={{
+            background: "rgba(20, 20, 30, 0.97)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            backdropFilter: "blur(20px)",
+            minWidth: "260px",
+          }}
+        >
+          <p className="text-xs font-body text-white/50 mb-2 px-1">Theme</p>
+          <div className="grid grid-cols-4 gap-2">
+            {COLOR_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => {
+                  setSelectedPreset(preset.id);
+                  setShowPalette(false);
+                }}
+                className="group relative flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all hover:bg-white/10"
+                title={preset.label}
+              >
+                <div
+                  className="w-8 h-8 rounded-full border-2 transition-all"
+                  style={{
+                    background: preset.bg,
+                    borderColor: selectedPreset === preset.id ? preset.accent : "rgba(255,255,255,0.15)",
+                    boxShadow: selectedPreset === preset.id ? `0 0 12px ${preset.accent}60` : "none",
+                  }}
+                >
+                  {selectedPreset === preset.id && (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5" style={{ color: preset.accent }} />
+                    </div>
+                  )}
+                </div>
+                <span className="text-[10px] text-white/60 group-hover:text-white/90 transition-colors">
+                  {preset.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   /* ── Lyrics content (shared between modes) ───────────── */
   const lyricsContent = (
@@ -278,29 +463,29 @@ export default function LyricsSync() {
             <div
               className="absolute inset-0 rounded-full animate-pulse"
               style={{
-                background: "radial-gradient(circle, hsl(var(--gold) / 0.5) 0%, transparent 70%)",
+                background: `radial-gradient(circle, ${colors.glow} 0%, transparent 70%)`,
                 filter: "blur(24px)",
                 transform: "scale(3)",
               }}
             />
-            <Music4 className="relative w-12 h-12 text-foreground" />
+            <Music4 className="relative w-12 h-12" style={{ color: colors.text }} />
           </div>
           <div className="flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-foreground/60" />
-            <p className="font-body text-base text-foreground/70">Loading lyrics...</p>
+            <Loader2 className="w-4 h-4 animate-spin" style={{ color: `${colors.text}99` }} />
+            <p className="font-body text-base" style={{ color: `${colors.text}b0` }}>Loading lyrics...</p>
           </div>
         </div>
       )}
 
       {error && !isLoading && (
         <div className="flex flex-col items-center justify-center h-full gap-3">
-          <Music4 className="w-10 h-10 text-foreground/30" />
-          <p className="font-body text-sm text-foreground/60 text-center max-w-xs">{error}</p>
+          <Music4 className="w-10 h-10" style={{ color: `${colors.text}40` }} />
+          <p className="font-body text-sm text-center max-w-xs" style={{ color: `${colors.text}90` }}>{error}</p>
           {videoId && (
             <button
               onClick={() => loadCaptions(videoId, activeSong?.title, activeSong?.artist)}
               className="font-body text-sm hover:underline"
-              style={{ color: "hsl(var(--gold))" }}
+              style={{ color: colors.accent }}
             >
               Try again
             </button>
@@ -310,8 +495,8 @@ export default function LyricsSync() {
 
       {!isLoading && !error && cues.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full gap-3">
-          <Music4 className="w-10 h-10 text-foreground/20" />
-          <p className="font-body text-sm text-foreground/50 text-center">
+          <Music4 className="w-10 h-10" style={{ color: `${colors.text}30` }} />
+          <p className="font-body text-sm text-center" style={{ color: `${colors.text}80` }}>
             {videoId ? "No lyrics available. Try another song." : "Search and select a song to see lyrics"}
           </p>
         </div>
@@ -334,13 +519,13 @@ export default function LyricsSync() {
                 initial={false}
                 animate={{
                   scale: isActive ? 1.02 : 1,
-                  opacity: isActive ? 1 : isNear ? 0.75 : isFar ? 0.25 : 0.45,
+                  opacity: isActive ? 1 : isNear ? 0.75 : isFar ? 0.2 : 0.4,
                 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="relative w-full text-left rounded-xl px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-500"
                 style={{
                   background: isActive
-                    ? "linear-gradient(135deg, hsl(var(--gold) / 0.12) 0%, hsl(var(--gold) / 0.04) 100%)"
+                    ? `linear-gradient(135deg, ${colors.accent}18 0%, ${colors.accent}08 100%)`
                     : "transparent",
                 }}
               >
@@ -350,9 +535,9 @@ export default function LyricsSync() {
                     layoutId="lyrics-glow"
                     className="absolute inset-0 rounded-xl pointer-events-none"
                     style={{
-                      background: "radial-gradient(ellipse at center, hsl(var(--gold) / 0.25) 0%, hsl(var(--gold) / 0.08) 40%, transparent 70%)",
-                      filter: "blur(12px)",
-                      transform: "scaleX(1.05) scaleY(1.8)",
+                      background: `radial-gradient(ellipse at center, ${colors.glow} 0%, ${colors.accent}15 40%, transparent 70%)`,
+                      filter: "blur(16px)",
+                      transform: "scaleX(1.05) scaleY(2)",
                     }}
                     transition={{ type: "spring", damping: 22, stiffness: 180 }}
                   />
@@ -364,8 +549,8 @@ export default function LyricsSync() {
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full"
                     style={{
                       height: "60%",
-                      background: "linear-gradient(180deg, hsl(var(--gold)) 0%, hsl(var(--gold) / 0.3) 100%)",
-                      boxShadow: "0 0 12px hsl(var(--gold) / 0.5)",
+                      background: `linear-gradient(180deg, ${colors.accent} 0%, ${colors.accent}50 100%)`,
+                      boxShadow: `0 0 14px ${colors.glow}`,
                     }}
                   />
                 )}
@@ -374,7 +559,7 @@ export default function LyricsSync() {
                   <span
                     className="font-body text-[10px] tabular-nums flex-shrink-0 mt-0.5 transition-colors duration-300"
                     style={{
-                      color: isActive ? "hsl(var(--gold))" : "hsl(var(--foreground) / 0.25)",
+                      color: isActive ? colors.accent : `${colors.text}35`,
                     }}
                   >
                     {fmtTime(cue.startMs)}
@@ -384,12 +569,12 @@ export default function LyricsSync() {
                       isFullscreen ? "text-xl sm:text-2xl md:text-3xl" : "text-base sm:text-lg"
                     }`}
                     style={{
-                      color: isActive ? "hsl(var(--foreground))" : `hsl(var(--foreground) / ${isNear ? 0.6 : 0.35})`,
-                      fontWeight: isActive ? 600 : 400,
+                      color: isActive ? colors.active : `${colors.text}${isNear ? "a0" : "55"}`,
+                      fontWeight: isActive ? 700 : 400,
                       textShadow: isActive
-                        ? "0 0 30px hsl(var(--gold) / 0.6), 0 0 60px hsl(var(--gold) / 0.25), 0 2px 4px hsl(0 0% 0% / 0.3)"
+                        ? `0 0 30px ${colors.glow}, 0 0 60px ${colors.accent}40, 0 2px 4px rgba(0,0,0,0.4)`
                         : "none",
-                      letterSpacing: isActive ? "0.01em" : "0",
+                      letterSpacing: isActive ? "0.02em" : "0",
                     }}
                   >
                     {cue.text}
@@ -415,23 +600,24 @@ export default function LyricsSync() {
             : "rounded-2xl h-[65vh]"
       }`}
       style={{
-        background: isFullscreen
-          ? "linear-gradient(180deg, hsl(var(--earth)) 0%, hsl(220 15% 6%) 100%)"
-          : isMini
-            ? "hsl(var(--card) / 0.98)"
-            : "linear-gradient(180deg, hsl(var(--card) / 0.95) 0%, hsl(var(--earth) / 0.85) 100%)",
-        border: isFullscreen ? "none" : "1px solid hsl(var(--border) / 0.3)",
+        background: colors.bg,
+        border: isFullscreen ? "none" : `1px solid ${colors.accent}20`,
         backdropFilter: isMini ? "blur(24px)" : undefined,
         boxShadow: isMini
-          ? "0 20px 60px hsl(0 0% 0% / 0.4), inset 0 1px 0 hsl(var(--gold-light) / 0.1)"
+          ? `0 20px 60px rgba(0,0,0,0.5), 0 0 20px ${colors.accent}15`
           : isFullscreen
             ? "none"
-            : "inset 0 1px 0 hsl(var(--gold-light) / 0.08), var(--shadow-card)",
+            : `0 8px 32px rgba(0,0,0,0.2), 0 0 20px ${colors.accent}08`,
       }}
     >
       {/* Header bar with controls */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/20 flex-shrink-0 z-20 relative"
-        style={{ background: "hsl(var(--card) / 0.3)", backdropFilter: "blur(10px)" }}
+      <div
+        className="flex items-center justify-between px-4 py-2.5 border-b flex-shrink-0 z-20 relative"
+        style={{
+          borderColor: `${colors.accent}15`,
+          background: `${colors.accent}08`,
+          backdropFilter: "blur(10px)",
+        }}
       >
         <div className="flex items-center gap-2 min-w-0">
           {activeSong?.thumbnail && (
@@ -445,74 +631,99 @@ export default function LyricsSync() {
             />
           )}
           <div className="min-w-0">
-            <p className={`font-display font-semibold text-foreground truncate ${isMini ? "text-xs" : "text-sm"}`}>
+            <p
+              className={`font-display font-semibold truncate ${isMini ? "text-xs" : "text-sm"}`}
+              style={{ color: colors.active }}
+            >
               {activeSong?.title || "Lyrics"}
             </p>
             {activeSong?.artist && !isMini && (
-              <p className="font-body text-xs text-foreground/50 truncate">{activeSong.artist}</p>
+              <p className="font-body text-xs truncate" style={{ color: `${colors.text}70` }}>
+                {activeSong.artist}
+              </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-0.5 flex-shrink-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0 relative">
+          {/* Color palette */}
+          <button
+            onClick={() => setShowPalette((p) => !p)}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: showPalette ? colors.accent : `${colors.text}90` }}
+            title="Change theme"
+          >
+            <Palette className="w-4 h-4" />
+          </button>
+          {palettePopup}
+
           {/* Mini/PiP toggle */}
           {!isMini && (
             <button
               onClick={() => setLyricsMode("mini")}
-              className="p-1.5 rounded-lg hover:bg-muted/30 transition-colors"
+              className="p-1.5 rounded-lg transition-colors"
               title="Mini player"
+              style={{ color: `${colors.text}90` }}
             >
-              <PictureInPicture2 className="w-4 h-4 text-foreground/60" />
+              <PictureInPicture2 className="w-4 h-4" />
             </button>
           )}
           {/* Fullscreen toggle */}
           <button
             onClick={() => setLyricsMode(isFullscreen ? "split" : "fullscreen")}
-            className="p-1.5 rounded-lg hover:bg-muted/30 transition-colors"
+            className="p-1.5 rounded-lg transition-colors"
             title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+            style={{ color: `${colors.text}90` }}
           >
-            {isFullscreen ? (
-              <Minimize2 className="w-4 h-4 text-foreground/60" />
-            ) : (
-              <Maximize2 className="w-4 h-4 text-foreground/60" />
-            )}
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
           {/* Restore to split if in mini */}
           {isMini && (
             <button
               onClick={() => setLyricsMode("split")}
-              className="p-1.5 rounded-lg hover:bg-muted/30 transition-colors"
+              className="p-1.5 rounded-lg transition-colors"
               title="Restore"
+              style={{ color: `${colors.text}90` }}
             >
-              <Maximize2 className="w-4 h-4 text-foreground/60" />
+              <Maximize2 className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
 
       {/* Top/bottom fade */}
-      <div className="absolute top-[44px] left-0 right-0 h-10 bg-gradient-to-b from-card/60 to-transparent z-10 pointer-events-none" />
+      <div
+        className="absolute top-[44px] left-0 right-0 h-10 z-10 pointer-events-none"
+        style={{ background: `linear-gradient(to bottom, ${colors.accent}10, transparent)` }}
+      />
       <div
         className="absolute bottom-0 left-0 right-0 h-20 z-10 pointer-events-none"
         style={{
-          background: isFullscreen
-            ? "linear-gradient(to top, hsl(220 15% 6%) 0%, transparent 100%)"
-            : "linear-gradient(to top, hsl(var(--earth) / 0.9) 0%, transparent 100%)",
+          background: `linear-gradient(to top, ${selectedPreset === "snow" ? "#f0f0f5" : "#0a0a12"} 0%, transparent 100%)`,
         }}
       />
 
       {/* Scrollable lyrics */}
-      <div className={`flex-1 overflow-y-auto scrollbar-ornate ${isMini ? "px-3 py-4" : isFullscreen ? "px-6 sm:px-16 md:px-24 py-12" : "px-5 py-8 sm:px-8"}`}>
+      <div
+        className={`flex-1 overflow-y-auto scrollbar-ornate ${
+          isMini ? "px-3 py-4" : isFullscreen ? "px-6 sm:px-16 md:px-24 py-12" : "px-5 py-8 sm:px-8"
+        }`}
+      >
         {lyricsContent}
       </div>
 
       {/* Bottom info bar (fullscreen only) */}
       {isFullscreen && activeSong && (
-        <div className="relative z-20 px-6 py-3 border-t border-border/10 flex items-center justify-center gap-2"
-          style={{ background: "hsl(var(--card) / 0.1)", backdropFilter: "blur(10px)" }}
+        <div
+          className="relative z-20 px-6 py-3 flex items-center justify-center gap-2"
+          style={{
+            borderTop: `1px solid ${colors.accent}15`,
+            background: `${colors.accent}08`,
+            backdropFilter: "blur(10px)",
+          }}
         >
-          <Music4 className="w-3.5 h-3.5" style={{ color: "hsl(var(--gold))" }} />
-          <span className="font-body text-xs text-foreground/50">
+          <Music4 className="w-3.5 h-3.5" style={{ color: colors.accent }} />
+          <span className="font-body text-xs" style={{ color: `${colors.text}70` }}>
             Tap any line to jump · {fmtTime(currentMs)}
           </span>
         </div>
@@ -575,7 +786,7 @@ export default function LyricsSync() {
               <Button
                 type="submit"
                 disabled={isSearching || !query.trim()}
-                className="rounded-xl bg-olive text-primary-foreground hover:bg-olive/90"
+                className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
               </Button>

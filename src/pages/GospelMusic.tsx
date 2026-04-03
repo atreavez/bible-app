@@ -275,7 +275,16 @@ export default function GospelMusic() {
                 <p className="font-body text-sm text-muted-foreground">
                   {activeVideo.artist}
                 </p>
-                <div className="mt-3 flex justify-center">
+                <div className="mt-3 flex justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => setShowLyrics(true)}
+                  >
+                    <Music2 className="w-4 h-4 mr-2" />
+                    Sing Along
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -283,7 +292,7 @@ export default function GospelMusic() {
                     onClick={() => openInYouTubeForBackground(activeVideo)}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    Background play in YouTube
+                    Background play
                   </Button>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground font-body">

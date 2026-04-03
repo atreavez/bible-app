@@ -23,6 +23,16 @@ type CaptionCue = {
   text: string;
 };
 
+type CaptionDebug = {
+  videoId: string;
+  title?: string;
+  captionTrackCount?: number;
+  trackLanguages?: string[];
+  selectedTrackLanguage?: string;
+  selectedTrackVssId?: string;
+  fetchAttempts?: Array<{ format: string; ok: boolean; parsed: "json3" | "xml" | "none" }>;
+};
+
 const decodeHtmlEntities = (value: string): string => {
   return value
     .replace(/&amp;/g, "&")
@@ -106,12 +116,16 @@ const parseJson3Captions = (payload: unknown): CaptionCue[] => {
   return cues;
 };
 
-const fetchCaptionsFromTrack = async (track: CaptionTrack): Promise<CaptionCue[]> => {
+const fetchCaptionsFromTrack = async (
+  track: CaptionTrack,
+): Promise<{ cues: CaptionCue[]; attempts: Array<{ format: string; ok: boolean; parsed: "json3" | "xml" | "none" }> }> => {
   const urlAttempts = [
     buildUrlWithFmt(track.baseUrl, "json3"),
     buildUrlWithFmt(track.baseUrl, "srv3"),
     track.baseUrl,
   ];
+
+  const attempts: Array<{ format: string; ok: boolean; parsed: "json3" | "xml" | "none" }> = [];
 
   for (const captionsUrl of urlAttempts) {
     try {
@@ -124,16 +138,23 @@ const fetchCaptionsFromTrack = async (track: CaptionTrack): Promise<CaptionCue[]
         signal: AbortSignal.timeout(12000),
       });
 
-      if (!captionsRes.ok) continue;
+      if (!captionsRes.ok) {
+        attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: false, parsed: "none" });
+        continue;
+      }
 
       const body = await captionsRes.text();
-      if (!body.trim()) continue;
+      if (!body.trim()) {
+        attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: true, parsed: "none" });
+        continue;
+      }
 
       try {
         const jsonPayload = JSON.parse(body);
         const jsonCues = parseJson3Captions(jsonPayload);
         if (jsonCues.length > 0) {
-          return jsonCues;
+          attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: true, parsed: "json3" });
+          return { cues: jsonCues, attempts };
         }
       } catch {
         // Not JSON payload; attempt XML parsing below.
@@ -142,15 +163,19 @@ const fetchCaptionsFromTrack = async (track: CaptionTrack): Promise<CaptionCue[]
       if (body.includes("<transcript") || body.includes("<text")) {
         const xmlCues = parseXmlCaptions(body);
         if (xmlCues.length > 0) {
-          return xmlCues;
+          attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: true, parsed: "xml" });
+          return { cues: xmlCues, attempts };
         }
       }
+
+      attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: true, parsed: "none" });
     } catch {
+      attempts.push({ format: captionsUrl.includes("fmt=srv3") ? "srv3" : captionsUrl.includes("fmt=json3") ? "json3" : "original", ok: false, parsed: "none" });
       continue;
     }
   }
 
-  return [];
+  return { cues: [], attempts };
 };
 
 const parseVideoId = (value: string): string | null => {
@@ -285,6 +310,12 @@ Deno.serve(async (req: Request) => {
           title,
           language: lang,
           cues: [],
+          debug: {
+            videoId,
+            title,
+            captionTrackCount: 0,
+            trackLanguages: [],
+          } satisfies CaptionDebug,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -310,11 +341,13 @@ Deno.serve(async (req: Request) => {
     const orderedTracks = Array.from(uniqueTrackMap.values());
     let cues: CaptionCue[] = [];
     let chosenTrack: CaptionTrack | null = null;
+    let fetchAttempts: CaptionDebug["fetchAttempts"] = [];
 
     for (const track of orderedTracks) {
-      const trackCues = await fetchCaptionsFromTrack(track);
-      if (trackCues.length > 0) {
-        cues = trackCues;
+      const result = await fetchCaptionsFromTrack(track);
+      fetchAttempts = [...(fetchAttempts || []), ...(result.attempts || [])];
+      if (result.cues.length > 0) {
+        cues = result.cues;
         chosenTrack = track;
         break;
       }
@@ -329,6 +362,15 @@ Deno.serve(async (req: Request) => {
           title,
           language: lang,
           cues: [],
+          debug: {
+            videoId,
+            title,
+            captionTrackCount: tracks.length,
+            trackLanguages: tracks.map((track) => track.languageCode || track.vssId || "unknown"),
+            selectedTrackLanguage: chosenTrack?.languageCode,
+            selectedTrackVssId: chosenTrack?.vssId,
+            fetchAttempts,
+          } satisfies CaptionDebug,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -343,6 +385,15 @@ Deno.serve(async (req: Request) => {
         title,
         language: chosenTrack?.languageCode || "unknown",
         cues,
+        debug: {
+          videoId,
+          title,
+          captionTrackCount: tracks.length,
+          trackLanguages: tracks.map((track) => track.languageCode || track.vssId || "unknown"),
+          selectedTrackLanguage: chosenTrack?.languageCode,
+          selectedTrackVssId: chosenTrack?.vssId,
+          fetchAttempts,
+        } satisfies CaptionDebug,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

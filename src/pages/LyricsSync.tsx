@@ -30,6 +30,20 @@ type SearchResult = {
   thumbnail: string;
 };
 
+type CaptionDebug = {
+  videoId?: string;
+  title?: string;
+  captionTrackCount?: number;
+  trackLanguages?: string[];
+  selectedTrackLanguage?: string;
+  selectedTrackVssId?: string;
+  fetchAttempts?: Array<{
+    format: string;
+    ok: boolean;
+    parsed: "json3" | "xml" | "none";
+  }>;
+};
+
 /* ── Color Presets ─────────────────────────────────────── */
 
 type ColorPreset = {
@@ -209,6 +223,7 @@ export default function LyricsSync() {
   const [cues, setCues] = useState<CaptionCue[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<CaptionDebug | null>(null);
   const [currentMs, setCurrentMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [lyricsMode, setLyricsMode] = useState<"split" | "fullscreen" | "mini">(
@@ -295,6 +310,7 @@ export default function LyricsSync() {
     async (id: string, title?: string, artist?: string) => {
       setIsLoading(true);
       setError(null);
+      setDebugInfo(null);
       setCues([]);
       try {
         const { data, error: err } = await supabase.functions.invoke(
@@ -312,6 +328,7 @@ export default function LyricsSync() {
 
         if (captionsAvailable) {
           setCues(data.cues);
+          setDebugInfo(data?.debug ?? null);
           return;
         }
 
@@ -320,13 +337,17 @@ export default function LyricsSync() {
           artist,
           functionError: err?.message || null,
           functionReason: data?.reason || null,
+          debug: data?.debug || null,
         });
+
+        setDebugInfo(data?.debug ?? null);
 
         setError(
           "No verified synced lyrics are available for this song yet. Try another version or live performance.",
         );
       } catch (e) {
         console.error("loadCaptions error:", e);
+        setDebugInfo(null);
         setError("Could not fetch lyrics right now. Try again.");
       } finally {
         setIsLoading(false);
@@ -535,6 +556,33 @@ export default function LyricsSync() {
           >
             {error}
           </p>
+          {debugInfo && (
+            <div className="w-full max-w-md rounded-xl border border-white/10 bg-black/20 p-3 text-left text-[11px] leading-5 text-white/70 font-mono overflow-x-auto">
+              <div className="mb-2 font-body text-xs uppercase tracking-wide text-white/50">
+                Debug
+              </div>
+              <div>videoId: {debugInfo.videoId || "n/a"}</div>
+              <div>title: {debugInfo.title || "n/a"}</div>
+              <div>
+                captionTrackCount:{" "}
+                {String(debugInfo.captionTrackCount ?? "n/a")}
+              </div>
+              <div>
+                trackLanguages: {debugInfo.trackLanguages?.join(", ") || "n/a"}
+              </div>
+              <div>
+                selectedTrackLanguage:{" "}
+                {debugInfo.selectedTrackLanguage || "n/a"}
+              </div>
+              <div>
+                selectedTrackVssId: {debugInfo.selectedTrackVssId || "n/a"}
+              </div>
+              <div className="mt-2">fetchAttempts:</div>
+              <pre className="whitespace-pre-wrap break-words">
+                {JSON.stringify(debugInfo.fetchAttempts || [], null, 2)}
+              </pre>
+            </div>
+          )}
           {videoId && (
             <button
               onClick={() =>

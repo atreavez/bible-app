@@ -100,7 +100,7 @@ export default function LyricsSync() {
   const [currentMs, setCurrentMs] = useState(0);
 
   const playerHostRef = useRef<HTMLDivElement | null>(null);
-  const playerRef = useRef<ReturnType<NonNullable<typeof window.YT>["Player"]> | null>(null);
+  const playerRef = useRef<{ destroy: () => void; seekTo: (s: number, a?: boolean) => void; getCurrentTime: () => number } | null>(null);
 
   /* ── Search songs ────────────────────────────────────── */
 

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Heart, ExternalLink, Search, X, Loader2, RefreshCw } from "lucide-react";
+import { Play, Heart, ExternalLink, Search, X, Loader2, RefreshCw, Music2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -8,6 +8,7 @@ import GsapReveal from "@/components/GsapReveal";
 import OrnamentDivider from "@/components/OrnamentDivider";
 import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from "@capacitor/core";
+import LyricsPanel from "@/components/LyricsPanel";
 
 interface PlaylistItem {
   id: string;
@@ -91,6 +92,7 @@ export default function GospelMusic() {
   const [isLoadingTrending, setIsLoadingTrending] = useState(true);
   const [trendingError, setTrendingError] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [showLyrics, setShowLyrics] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     const saved = localStorage.getItem("gospel-favorites");
     return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -273,7 +275,16 @@ export default function GospelMusic() {
                 <p className="font-body text-sm text-muted-foreground">
                   {activeVideo.artist}
                 </p>
-                <div className="mt-3 flex justify-center">
+                <div className="mt-3 flex justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => setShowLyrics(true)}
+                  >
+                    <Music2 className="w-4 h-4 mr-2" />
+                    Sing Along
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -281,7 +292,7 @@ export default function GospelMusic() {
                     onClick={() => openInYouTubeForBackground(activeVideo)}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    Background play in YouTube
+                    Background play
                   </Button>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground font-body">
@@ -498,6 +509,16 @@ export default function GospelMusic() {
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
+                    onClick={() => {
+                      setActiveVideo(song);
+                      setShowLyrics(true);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                    title="Lyrics"
+                  >
+                    <Music2 className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button
                     onClick={() => toggleFavorite(song.id)}
                     className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                   >
@@ -533,6 +554,12 @@ export default function GospelMusic() {
 
         <OrnamentDivider />
       </div>
+
+      <LyricsPanel
+        song={activeVideo}
+        isOpen={showLyrics}
+        onClose={() => setShowLyrics(false)}
+      />
     </div>
   );
 }

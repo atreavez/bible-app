@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Heart, ExternalLink, Search, X, Loader2 } from "lucide-react";
+import { Play, Heart, ExternalLink, Search, X, Loader2, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -18,174 +18,59 @@ interface PlaylistItem {
   category: string;
 }
 
-const CURATED: PlaylistItem[] = [
-  {
-    id: "1",
-    title: "Graves Into Gardens",
-    artist: "Elevation Worship",
-    youtubeId: "MiBHOQqEpZ8",
-    thumbnail: "https://img.youtube.com/vi/MiBHOQqEpZ8/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "2",
-    title: "Way Maker",
-    artist: "Sinach",
-    youtubeId: "QZ3sI_MOVES",
-    thumbnail: "https://img.youtube.com/vi/QZ3sI_MOVES/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "3",
-    title: "Goodness of God",
-    artist: "Bethel Music",
-    youtubeId: "EdOSKpMYER4",
-    thumbnail: "https://img.youtube.com/vi/EdOSKpMYER4/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "4",
-    title: "Oceans",
-    artist: "Hillsong UNITED",
-    youtubeId: "dy9nwe9_xzw",
-    thumbnail: "https://img.youtube.com/vi/dy9nwe9_xzw/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "5",
-    title: "Great Are You Lord",
-    artist: "All Sons & Daughters",
-    youtubeId: "JCNUNiILFVo",
-    thumbnail: "https://img.youtube.com/vi/JCNUNiILFVo/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "6",
-    title: "Holy Spirit",
-    artist: "Francesca Battistelli",
-    youtubeId: "6WSTM7e0z4E",
-    thumbnail: "https://img.youtube.com/vi/6WSTM7e0z4E/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "7",
-    title: "How Great Is Our God",
-    artist: "Chris Tomlin",
-    youtubeId: "KBD18rsVJHk",
-    thumbnail: "https://img.youtube.com/vi/KBD18rsVJHk/hqdefault.jpg",
-    category: "Praise",
-  },
-  {
-    id: "8",
-    title: "Reckless Love",
-    artist: "Cory Asbury",
-    youtubeId: "FiPETYFXLgA",
-    thumbnail: "https://img.youtube.com/vi/FiPETYFXLgA/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "9",
-    title: "What A Beautiful Name",
-    artist: "Hillsong Worship",
-    youtubeId: "nQWFzMvCfLE",
-    thumbnail: "https://img.youtube.com/vi/nQWFzMvCfLE/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "10",
-    title: "10,000 Reasons",
-    artist: "Matt Redman",
-    youtubeId: "XtwIT8JjddM",
-    thumbnail: "https://img.youtube.com/vi/XtwIT8JjddM/hqdefault.jpg",
-    category: "Praise",
-  },
-  {
-    id: "11",
-    title: "Yes I Will",
-    artist: "Vertical Worship",
-    youtubeId: "P2SDi6VkVXA",
-    thumbnail: "https://img.youtube.com/vi/P2SDi6VkVXA/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "12",
-    title: "Amazing Grace (My Chains Are Gone)",
-    artist: "Chris Tomlin",
-    youtubeId: "YrLk4vdY28Q",
-    thumbnail: "https://img.youtube.com/vi/YrLk4vdY28Q/hqdefault.jpg",
-    category: "Hymns",
-  },
-  {
-    id: "13",
-    title: "It Is Well With My Soul",
-    artist: "Bethel Music",
-    youtubeId: "zY5o9mP22V0",
-    thumbnail: "https://img.youtube.com/vi/zY5o9mP22V0/hqdefault.jpg",
-    category: "Hymns",
-  },
-  {
-    id: "14",
-    title: "No Longer Slaves",
-    artist: "Bethel Music",
-    youtubeId: "XGur1Jc-IWM",
-    thumbnail: "https://img.youtube.com/vi/XGur1Jc-IWM/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "15",
-    title: "Build My Life",
-    artist: "Housefires",
-    youtubeId: "Z0dIBr8csaM",
-    thumbnail: "https://img.youtube.com/vi/Z0dIBr8csaM/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "16",
-    title: "Total Praise",
-    artist: "Richard Smallwood",
-    youtubeId: "rG-RGIMnFOY",
-    thumbnail: "https://img.youtube.com/vi/rG-RGIMnFOY/hqdefault.jpg",
-    category: "Gospel",
-  },
-  {
-    id: "17",
-    title: "Every Praise",
-    artist: "Hezekiah Walker",
-    youtubeId: "UuuZMg6NVeA",
-    thumbnail: "https://img.youtube.com/vi/UuuZMg6NVeA/hqdefault.jpg",
-    category: "Gospel",
-  },
-  {
-    id: "18",
-    title: "Never Would Have Made It",
-    artist: "Marvin Sapp",
-    youtubeId: "HH_fMT50xlE",
-    thumbnail: "https://img.youtube.com/vi/HH_fMT50xlE/hqdefault.jpg",
-    category: "Gospel",
-  },
-  {
-    id: "19",
-    title: "Jireh",
-    artist: "Maverick City Music",
-    youtubeId: "GIhN2CDZJTU",
-    thumbnail: "https://img.youtube.com/vi/GIhN2CDZJTU/hqdefault.jpg",
-    category: "Worship",
-  },
-  {
-    id: "20",
-    title: "Refiner",
-    artist: "Maverick City Music",
-    youtubeId: "R3JjYXsfWcE",
-    thumbnail: "https://img.youtube.com/vi/R3JjYXsfWcE/hqdefault.jpg",
-    category: "Worship",
-  },
+const TRENDING_QUERIES = [
+  "latest trending gospel songs",
+  "new gospel worship songs",
+  "gospel praise hits",
+  "afro gospel trending",
+  "contemporary christian worship latest",
+  "spirit-filled gospel songs new release",
+  "urban gospel trending now",
+  "gospel music chart",
 ];
 
 const CATEGORIES = ["All", "Worship", "Praise", "Gospel", "Hymns"];
 
-async function searchYouTube(query: string): Promise<PlaylistItem[]> {
+const pickRandom = (arr: string[], count: number): string[] => {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, Math.min(count, copy.length));
+};
+
+const classifyCategory = (title: string, artist: string): string => {
+  const text = `${title} ${artist}`.toLowerCase();
+  if (text.includes("hymn") || text.includes("grace") || text.includes("it is well")) {
+    return "Hymns";
+  }
+  if (text.includes("praise") || text.includes("hallelujah") || text.includes("victory")) {
+    return "Praise";
+  }
+  if (text.includes("worship") || text.includes("adore") || text.includes("holy")) {
+    return "Worship";
+  }
+  return "Gospel";
+};
+
+const normalizeItems = (items: any[], prefix: string): PlaylistItem[] =>
+  items.map((item: any, idx: number) => ({
+    id: `${prefix}-${item.youtubeId}-${idx}`,
+    title: item.title,
+    artist: item.artist,
+    youtubeId: item.youtubeId,
+    thumbnail: item.thumbnail,
+    category: classifyCategory(item.title, item.artist),
+  }));
+
+async function searchYouTube(
+  query: string,
+  mode: "search" | "trending" = "search",
+  maxResults = 20,
+): Promise<PlaylistItem[]> {
   const { data, error } = await supabase.functions.invoke("youtube-search", {
-    body: { query },
+    body: { query, mode, maxResults },
   });
   if (error || !data?.success) return [];
   return (data.items || []).map((item: any) => ({
@@ -202,21 +87,61 @@ export default function GospelMusic() {
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [trendingSongs, setTrendingSongs] = useState<PlaylistItem[]>([]);
+  const [isLoadingTrending, setIsLoadingTrending] = useState(true);
+  const [trendingError, setTrendingError] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     const saved = localStorage.getItem("gospel-favorites");
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
-  // Local suggestions from curated list
+  const loadTrendingSongs = useCallback(async () => {
+    setIsLoadingTrending(true);
+    setTrendingError(null);
+    setHasSearched(false);
+    setSearchResults([]);
+
+    try {
+      const selectedQueries = pickRandom(TRENDING_QUERIES, 3);
+      const responses = await Promise.all(
+        selectedQueries.map((q) => searchYouTube(q, "trending", 12)),
+      );
+      const flattened = normalizeItems(responses.flat(), "trend");
+
+      const deduped = flattened.filter(
+        (song, index, list) =>
+          list.findIndex((candidate) => candidate.youtubeId === song.youtubeId) === index,
+      );
+
+      const shuffled = [...deduped].sort(() => Math.random() - 0.5);
+      const latestTrending = shuffled.slice(0, 20);
+
+      setTrendingSongs(latestTrending);
+      if (latestTrending.length === 0) {
+        setTrendingError("No trending gospel songs found right now. Tap refresh to try again.");
+      }
+    } catch {
+      setTrendingSongs([]);
+      setTrendingError("Unable to fetch trending songs right now. Check connection and try again.");
+    } finally {
+      setIsLoadingTrending(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadTrendingSongs();
+  }, [loadTrendingSongs]);
+
+  // Local suggestions from current trending songs
   const suggestions = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return [];
-    return CURATED.filter(
+    return trendingSongs.filter(
       (s) =>
         s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q),
     ).slice(0, 5);
-  }, [searchQuery]);
+  }, [searchQuery, trendingSongs]);
 
   // Close suggestions on outside click
   useEffect(() => {
@@ -290,9 +215,9 @@ export default function GospelMusic() {
   const filtered = useMemo(() => {
     if (hasSearched) return searchResults;
     return activeCategory === "All"
-      ? CURATED
-      : CURATED.filter((p) => p.category === activeCategory);
-  }, [activeCategory, hasSearched, searchResults]);
+      ? trendingSongs
+      : trendingSongs.filter((p) => p.category === activeCategory);
+  }, [activeCategory, hasSearched, searchResults, trendingSongs]);
 
   return (
     <div className="min-h-screen bg-background scrollbar-ornate">
@@ -304,9 +229,24 @@ export default function GospelMusic() {
             Gospel <span className="text-gradient-gold italic">Music</span>
           </h1>
           <p className="mt-3 font-body text-muted-foreground max-w-lg mx-auto">
-            Search any gospel song on YouTube or browse our curated collection.
+            Search any gospel song on YouTube or browse latest trending picks refreshed from YouTube.
           </p>
         </GsapReveal>
+
+        <div className="flex justify-center mb-6">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => {
+              void loadTrendingSongs();
+            }}
+            disabled={isLoadingTrending}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingTrending ? "animate-spin" : ""}`} />
+            Refresh Trending
+          </Button>
+        </div>
 
         {/* Now Playing */}
         <AnimatePresence>
@@ -409,7 +349,7 @@ export default function GospelMusic() {
                   className="absolute z-50 top-full mt-1 w-full bg-card border border-border rounded-xl shadow-lg overflow-hidden"
                 >
                   <p className="px-3 py-1.5 text-xs text-muted-foreground font-body border-b border-border">
-                    From curated collection
+                    From latest trending songs
                   </p>
                   {suggestions.map((song) => (
                     <button
@@ -493,12 +433,24 @@ export default function GospelMusic() {
               onClick={clearSearch}
               className="text-sm text-olive hover:underline font-body mt-1"
             >
-              ← Back to curated collection
+              ← Back to trending songs
             </button>
           </div>
         )}
 
         {/* Song Grid */}
+        {isLoadingTrending && !hasSearched && (
+          <div className="flex justify-center mb-6">
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {trendingError && !hasSearched && (
+          <p className="text-center text-red-500 font-body mb-6 text-sm">
+            {trendingError}
+          </p>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((song, i) => (
             <motion.div

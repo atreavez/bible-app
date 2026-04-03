@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
+    const { query, mode = "search", maxResults = 20 } = await req.json();
 
     if (!query || typeof query !== "string" || query.trim().length === 0) {
       return new Response(
@@ -19,7 +19,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    const searchQuery = `${query.trim()} gospel worship`;
+    const parsedMaxResults = Number.isFinite(Number(maxResults))
+      ? Math.max(1, Math.min(30, Number(maxResults)))
+      : 20;
+
+    const year = new Date().getFullYear();
+    const normalizedQuery = query.trim();
+    const searchQuery = mode === "trending"
+      ? `${normalizedQuery} gospel music latest trending ${year} this week`
+      : `${normalizedQuery} gospel worship`;
     // sp=EgIQAQ%3D%3D filters for videos only
     const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}&sp=EgIQAQ%3D%3D`;
 
@@ -98,9 +106,9 @@ Deno.serve(async (req) => {
           duration,
         });
 
-        if (items.length >= 20) break;
+        if (items.length >= parsedMaxResults) break;
       }
-      if (items.length >= 20) break;
+      if (items.length >= parsedMaxResults) break;
     }
 
     console.log(`Found ${items.length} results for "${searchQuery}"`);

@@ -315,6 +315,16 @@ export default function GospelMusic() {
                   alt={song.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallbacks = [
+                      `https://img.youtube.com/vi/${song.youtubeId}/mqdefault.jpg`,
+                      `https://img.youtube.com/vi/${song.youtubeId}/default.jpg`,
+                      `https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`,
+                    ];
+                    const next = fallbacks.find(u => u !== target.src);
+                    if (next) target.src = next;
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="w-12 h-12 rounded-full bg-olive/90 flex items-center justify-center">

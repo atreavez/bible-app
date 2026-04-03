@@ -144,23 +144,46 @@ export default function LyricsSync() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  /* ── Load captions ───────────────────────────────────── */
+  /* ── Load captions (with AI lyrics fallback) ──────────── */
 
-  const loadCaptions = useCallback(async (id: string) => {
+  const loadCaptions = useCallback(async (id: string, title?: string, artist?: string) => {
     setIsLoading(true);
     setError(null);
     setCues([]);
     try {
+      // Try YouTube captions first
       const { data, error: err } = await supabase.functions.invoke("youtube-captions", {
         body: { videoId: id, lang: "en" },
       });
-      if (err || !data?.success) {
-        setError(data?.error || "Could not fetch captions for this video.");
-        return;
+      if (!err && data?.success) {
+        const nextCues: CaptionCue[] = Array.isArray(data.cues) ? data.cues : [];
+        if (nextCues.length > 0) {
+          setCues(nextCues);
+          return;
+        }
       }
-      const nextCues: CaptionCue[] = Array.isArray(data.cues) ? data.cues : [];
-      setCues(nextCues);
-      if (!nextCues.length) setError("No synced captions found for this video.");
+
+      // Fallback: use AI-generated lyrics
+      if (title) {
+        const { data: lyricsData, error: lyricsErr } = await supabase.functions.invoke("song-lyrics", {
+          body: { title, artist: artist || "" },
+        });
+        if (!lyricsErr && lyricsData?.success && lyricsData.lyrics) {
+          // Convert AI lyrics into timed cues (evenly spaced, ~3s each)
+          const lines = lyricsData.lyrics.split("\n").filter((l: string) => l.trim());
+          const interval = 3000;
+          const aiCues: CaptionCue[] = lines.map((text: string, i: number) => ({
+            startMs: i * interval,
+            durationMs: interval,
+            text: text.trim(),
+          }));
+          setCues(aiCues);
+          setError(null);
+          return;
+        }
+      }
+
+      setError("No lyrics found for this video. Try a different song.");
     } catch {
       setError("Could not fetch lyrics right now. Try again.");
     } finally {
@@ -194,7 +217,7 @@ export default function LyricsSync() {
       setVideoId(song.youtubeId);
       setShowResults(false);
       setCurrentMs(0);
-      await Promise.all([loadCaptions(song.youtubeId), buildPlayer(song.youtubeId)]);
+      await Promise.all([loadCaptions(song.youtubeId, song.title, song.artist), buildPlayer(song.youtubeId)]);
     },
     [loadCaptions, buildPlayer],
   );
@@ -424,7 +447,7 @@ export default function LyricsSync() {
                   <p className="font-body text-sm text-muted-foreground text-center max-w-xs">{error}</p>
                   {videoId && (
                     <button
-                      onClick={() => loadCaptions(videoId)}
+                      onClick={() => loadCaptions(videoId, activeSong?.title, activeSong?.artist)}
                       className="font-body text-sm text-olive hover:underline"
                     >
                       Try again

@@ -217,7 +217,7 @@ export default function LyricsSync() {
       setVideoId(song.youtubeId);
       setShowResults(false);
       setCurrentMs(0);
-      await Promise.all([loadCaptions(song.youtubeId), buildPlayer(song.youtubeId)]);
+      await Promise.all([loadCaptions(song.youtubeId, song.title, song.artist), buildPlayer(song.youtubeId)]);
     },
     [loadCaptions, buildPlayer],
   );

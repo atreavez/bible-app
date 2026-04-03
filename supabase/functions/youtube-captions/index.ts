@@ -23,6 +23,136 @@ type CaptionCue = {
   text: string;
 };
 
+const decodeHtmlEntities = (value: string): string => {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&#x2F;/gi, "/")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+};
+
+const parseXmlCaptions = (xml: string): CaptionCue[] => {
+  const cues: CaptionCue[] = [];
+  const pattern = /<text\b([^>]*)>([\s\S]*?)<\/text>/g;
+  let match: RegExpExecArray | null = null;
+
+  while ((match = pattern.exec(xml)) !== null) {
+    const attrs = match[1] || "";
+    const textContent = decodeHtmlEntities(match[2] || "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!textContent) continue;
+
+    const startMatch = attrs.match(/\bstart="([0-9.]+)"/);
+    const durMatch = attrs.match(/\bdur="([0-9.]+)"/);
+    const startSeconds = startMatch ? Number(startMatch[1]) : 0;
+    const durSeconds = durMatch ? Number(durMatch[1]) : 0;
+
+    cues.push({
+      startMs: Math.max(0, Math.round(startSeconds * 1000)),
+      durationMs: Math.max(0, Math.round(durSeconds * 1000)),
+      text: textContent,
+    });
+  }
+
+  return cues;
+};
+
+const buildUrlWithFmt = (baseUrl: string, fmt: string): string => {
+  try {
+    const url = new URL(baseUrl);
+    url.searchParams.set("fmt", fmt);
+    return url.toString();
+  } catch {
+    const joiner = baseUrl.includes("?") ? "&" : "?";
+    return `${baseUrl}${joiner}fmt=${encodeURIComponent(fmt)}`;
+  }
+};
+
+const parseJson3Captions = (payload: unknown): CaptionCue[] => {
+  const events = Array.isArray((payload as any)?.events)
+    ? (payload as any).events
+    : [];
+
+  const cues: CaptionCue[] = [];
+  for (const event of events) {
+    const segs = Array.isArray(event?.segs) ? event.segs : [];
+    if (!segs.length) continue;
+
+    const text = segs
+      .map((seg: { utf8?: string }) => seg?.utf8 || "")
+      .join("")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!text) continue;
+
+    const startMs = Number(event?.tStartMs || 0);
+    const durationMs = Number(event?.dDurationMs || 0);
+
+    cues.push({
+      startMs,
+      durationMs,
+      text,
+    });
+  }
+
+  return cues;
+};
+
+const fetchCaptionsFromTrack = async (track: CaptionTrack): Promise<CaptionCue[]> => {
+  const urlAttempts = [
+    buildUrlWithFmt(track.baseUrl, "json3"),
+    buildUrlWithFmt(track.baseUrl, "srv3"),
+    track.baseUrl,
+  ];
+
+  for (const captionsUrl of urlAttempts) {
+    try {
+      const captionsRes = await fetch(captionsUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        signal: AbortSignal.timeout(12000),
+      });
+
+      if (!captionsRes.ok) continue;
+
+      const body = await captionsRes.text();
+      if (!body.trim()) continue;
+
+      try {
+        const jsonPayload = JSON.parse(body);
+        const jsonCues = parseJson3Captions(jsonPayload);
+        if (jsonCues.length > 0) {
+          return jsonCues;
+        }
+      } catch {
+        // Not JSON payload; attempt XML parsing below.
+      }
+
+      if (body.includes("<transcript") || body.includes("<text")) {
+        const xmlCues = parseXmlCaptions(body);
+        if (xmlCues.length > 0) {
+          return xmlCues;
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return [];
+};
+
 const parseVideoId = (value: string): string | null => {
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -162,62 +292,48 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const preferredTrack =
-      tracks.find((t) => t.languageCode === lang) ||
-      tracks.find((t) => t.languageCode?.startsWith(lang)) ||
-      tracks.find((t) => (t.vssId || "").includes(`.${lang}`)) ||
-      tracks[0];
+    const preferredTracks = [
+      ...tracks.filter((t) => t.languageCode === lang),
+      ...tracks.filter((t) => t.languageCode?.startsWith(lang)),
+      ...tracks.filter((t) => (t.vssId || "").includes(`.${lang}`)),
+      ...tracks,
+    ];
 
-    const captionsUrl = `${preferredTrack.baseUrl}&fmt=json3`;
-    const captionsRes = await fetch(captionsUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-      signal: AbortSignal.timeout(12000),
-    });
+    const uniqueTrackMap = new Map<string, CaptionTrack>();
+    for (const track of preferredTracks) {
+      if (!track?.baseUrl) continue;
+      if (!uniqueTrackMap.has(track.baseUrl)) {
+        uniqueTrackMap.set(track.baseUrl, track);
+      }
+    }
 
-    if (!captionsRes.ok) {
+    const orderedTracks = Array.from(uniqueTrackMap.values());
+    let cues: CaptionCue[] = [];
+    let chosenTrack: CaptionTrack | null = null;
+
+    for (const track of orderedTracks) {
+      const trackCues = await fetchCaptionsFromTrack(track);
+      if (trackCues.length > 0) {
+        cues = trackCues;
+        chosenTrack = track;
+        break;
+      }
+    }
+
+    if (!cues.length) {
       return new Response(
         JSON.stringify({
-          success: false,
-          error: "Failed to fetch captions stream",
+          success: true,
+          hasCaptions: false,
+          reason: "caption_stream_empty",
+          title,
+          language: lang,
           cues: [],
         }),
         {
-          status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
-    }
-
-    const captionsJson = await captionsRes.json();
-    const events = Array.isArray(captionsJson?.events)
-      ? captionsJson.events
-      : [];
-
-    const cues: CaptionCue[] = [];
-    for (const event of events) {
-      const segs = Array.isArray(event?.segs) ? event.segs : [];
-      if (!segs.length) continue;
-
-      const text = segs
-        .map((seg: { utf8?: string }) => seg?.utf8 || "")
-        .join("")
-        .replace(/\s+/g, " ")
-        .trim();
-
-      if (!text) continue;
-
-      const startMs = Number(event?.tStartMs || 0);
-      const durationMs = Number(event?.dDurationMs || 0);
-
-      cues.push({
-        startMs,
-        durationMs,
-        text,
-      });
     }
 
     return new Response(
@@ -225,7 +341,7 @@ Deno.serve(async (req: Request) => {
         success: true,
         videoId,
         title,
-        language: preferredTrack.languageCode || "unknown",
+        language: chosenTrack?.languageCode || "unknown",
         cues,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

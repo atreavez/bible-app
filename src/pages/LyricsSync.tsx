@@ -289,7 +289,7 @@ export default function LyricsSync() {
     } catch {}
   }, [selectedPreset]);
 
-  /* ── Load captions (with AI lyrics fallback) ──────────── */
+  /* ── Load verified captions only ───────────────────────── */
 
   const loadCaptions = useCallback(
     async (id: string, title?: string, artist?: string) => {
@@ -304,12 +304,6 @@ export default function LyricsSync() {
           },
         );
 
-        const resolvedTitle =
-          typeof data?.title === "string" && data.title.trim().length > 0
-            ? data.title
-            : title;
-        const resolvedArtist = artist || activeSong?.artist || "";
-
         const captionsAvailable =
           !err &&
           data?.success &&
@@ -321,40 +315,15 @@ export default function LyricsSync() {
           return;
         }
 
-        console.log("Captions not available, falling back to AI lyrics", {
-          title: resolvedTitle,
-          artist: resolvedArtist,
+        console.log("Captions unavailable for selected song", {
+          title,
+          artist,
           functionError: err?.message || null,
           functionReason: data?.reason || null,
         });
 
-        if (resolvedTitle) {
-          const { data: lyricsData, error: lyricsErr } =
-            await supabase.functions.invoke("song-lyrics", {
-              body: { title: resolvedTitle, artist: resolvedArtist },
-            });
-          if (!lyricsErr && lyricsData?.success && lyricsData.lyrics) {
-            const lines = lyricsData.lyrics
-              .split("\n")
-              .filter((l: string) => l.trim());
-            const interval = 3000;
-            const aiCues: CaptionCue[] = lines.map(
-              (text: string, i: number) => ({
-                startMs: i * interval,
-                durationMs: interval,
-                text: text.trim(),
-              }),
-            );
-            setCues(aiCues);
-            setError(null);
-            return;
-          }
-        }
-
         setError(
-          err?.message
-            ? "Captions were unavailable and backup lyrics could not be loaded."
-            : "No lyrics found for this video. Try a different song.",
+          "No verified synced lyrics are available for this song yet. Try another version or live performance.",
         );
       } catch (e) {
         console.error("loadCaptions error:", e);

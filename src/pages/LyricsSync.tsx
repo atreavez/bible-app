@@ -155,21 +155,22 @@ export default function LyricsSync() {
       const { data, error: err } = await supabase.functions.invoke("youtube-captions", {
         body: { videoId: id, lang: "en" },
       });
-      if (!err && data?.success) {
-        const nextCues: CaptionCue[] = Array.isArray(data.cues) ? data.cues : [];
-        if (nextCues.length > 0) {
-          setCues(nextCues);
-          return;
-        }
+      
+      const captionsAvailable = !err && data?.success && Array.isArray(data.cues) && data.cues.length > 0;
+      
+      if (captionsAvailable) {
+        setCues(data.cues);
+        return;
       }
 
       // Fallback: use AI-generated lyrics
+      console.log("Captions not available, falling back to AI lyrics", { title, artist, err: err?.message });
       if (title) {
         const { data: lyricsData, error: lyricsErr } = await supabase.functions.invoke("song-lyrics", {
           body: { title, artist: artist || "" },
         });
+        console.log("AI lyrics response:", { success: lyricsData?.success, hasLyrics: !!lyricsData?.lyrics, err: lyricsErr?.message });
         if (!lyricsErr && lyricsData?.success && lyricsData.lyrics) {
-          // Convert AI lyrics into timed cues (evenly spaced, ~3s each)
           const lines = lyricsData.lyrics.split("\n").filter((l: string) => l.trim());
           const interval = 3000;
           const aiCues: CaptionCue[] = lines.map((text: string, i: number) => ({
@@ -184,7 +185,8 @@ export default function LyricsSync() {
       }
 
       setError("No lyrics found for this video. Try a different song.");
-    } catch {
+    } catch (e) {
+      console.error("loadCaptions error:", e);
       setError("Could not fetch lyrics right now. Try again.");
     } finally {
       setIsLoading(false);

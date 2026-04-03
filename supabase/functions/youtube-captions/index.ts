@@ -33,7 +33,7 @@ type CaptionDebug = {
   fetchAttempts?: Array<{
     format: string;
     ok: boolean;
-    parsed: "json3" | "xml" | "none";
+    parsed: "json3" | "xml" | "srv3" | "vtt" | "none";
   }>;
 };
 
@@ -72,6 +72,100 @@ const parseXmlCaptions = (xml: string): CaptionCue[] => {
       startMs: Math.max(0, Math.round(startSeconds * 1000)),
       durationMs: Math.max(0, Math.round(durSeconds * 1000)),
       text: textContent,
+    });
+  }
+
+  return cues;
+};
+
+const parseSrv3Captions = (xml: string): CaptionCue[] => {
+  const cues: CaptionCue[] = [];
+  const pattern = /<p\b([^>]*)>([\s\S]*?)<\/p>/g;
+  let match: RegExpExecArray | null = null;
+
+  while ((match = pattern.exec(xml)) !== null) {
+    const attrs = match[1] || "";
+    const rawContent = match[2] || "";
+
+    const startMatch = attrs.match(/\bt="(\d+)"/);
+    const durMatch = attrs.match(/\bd="(\d+)"/);
+    const startMs = startMatch ? Number(startMatch[1]) : 0;
+    const durationMs = durMatch ? Number(durMatch[1]) : 0;
+
+    // srv3 commonly wraps words in <s> and uses \n for line breaks.
+    const text = decodeHtmlEntities(rawContent)
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s*\n\s*/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!text) continue;
+
+    cues.push({
+      startMs: Math.max(0, startMs),
+      durationMs: Math.max(0, durationMs),
+      text,
+    });
+  }
+
+  return cues;
+};
+
+const parseVttCaptions = (vtt: string): CaptionCue[] => {
+  const cues: CaptionCue[] = [];
+  const normalized = vtt.replace(/\r\n/g, "\n");
+  const blocks = normalized
+    .split(/\n\n+/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  const timeToMs = (time: string): number => {
+    const parts = time.split(":").map((p) => p.trim());
+    if (parts.length < 2 || parts.length > 3) return 0;
+
+    const [hh, mm, ss] =
+      parts.length === 3 ? parts : ["0", parts[0], parts[1]];
+    const [secPart, msPart = "0"] = ss.split(".");
+
+    const hours = Number(hh) || 0;
+    const minutes = Number(mm) || 0;
+    const seconds = Number(secPart) || 0;
+    const milliseconds = Number((msPart + "000").slice(0, 3)) || 0;
+
+    return (
+      hours * 60 * 60 * 1000 +
+      minutes * 60 * 1000 +
+      seconds * 1000 +
+      milliseconds
+    );
+  };
+
+  for (const block of blocks) {
+    if (block.startsWith("WEBVTT") || block.startsWith("NOTE")) continue;
+
+    const lines = block.split("\n").map((line) => line.trimEnd());
+    const timingLineIndex = lines.findIndex((line) => line.includes("-->"));
+    if (timingLineIndex < 0) continue;
+
+    const timingLine = lines[timingLineIndex];
+    const [startRaw, endRaw] = timingLine.split("-->").map((v) => v.trim());
+    if (!startRaw || !endRaw) continue;
+
+    const startMs = timeToMs(startRaw.split(" ")[0]);
+    const endMs = timeToMs(endRaw.split(" ")[0]);
+
+    const text = decodeHtmlEntities(lines.slice(timingLineIndex + 1).join(" "))
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!text) continue;
+
+    cues.push({
+      startMs: Math.max(0, startMs),
+      durationMs: Math.max(0, endMs - startMs),
+      text,
     });
   }
 
@@ -127,20 +221,28 @@ const fetchCaptionsFromTrack = async (
   attempts: Array<{
     format: string;
     ok: boolean;
-    parsed: "json3" | "xml" | "none";
+    parsed: "json3" | "xml" | "srv3" | "vtt" | "none";
   }>;
 }> => {
   const urlAttempts = [
     buildUrlWithFmt(track.baseUrl, "json3"),
     buildUrlWithFmt(track.baseUrl, "srv3"),
+    buildUrlWithFmt(track.baseUrl, "vtt"),
     track.baseUrl,
   ];
 
   const attempts: Array<{
     format: string;
     ok: boolean;
-    parsed: "json3" | "xml" | "none";
+    parsed: "json3" | "xml" | "srv3" | "vtt" | "none";
   }> = [];
+
+  const detectFormat = (captionsUrl: string): string => {
+    if (captionsUrl.includes("fmt=srv3")) return "srv3";
+    if (captionsUrl.includes("fmt=json3")) return "json3";
+    if (captionsUrl.includes("fmt=vtt")) return "vtt";
+    return "original";
+  };
 
   for (const captionsUrl of urlAttempts) {
     try {
@@ -155,11 +257,7 @@ const fetchCaptionsFromTrack = async (
 
       if (!captionsRes.ok) {
         attempts.push({
-          format: captionsUrl.includes("fmt=srv3")
-            ? "srv3"
-            : captionsUrl.includes("fmt=json3")
-              ? "json3"
-              : "original",
+          format: detectFormat(captionsUrl),
           ok: false,
           parsed: "none",
         });
@@ -169,11 +267,7 @@ const fetchCaptionsFromTrack = async (
       const body = await captionsRes.text();
       if (!body.trim()) {
         attempts.push({
-          format: captionsUrl.includes("fmt=srv3")
-            ? "srv3"
-            : captionsUrl.includes("fmt=json3")
-              ? "json3"
-              : "original",
+          format: detectFormat(captionsUrl),
           ok: true,
           parsed: "none",
         });
@@ -185,11 +279,7 @@ const fetchCaptionsFromTrack = async (
         const jsonCues = parseJson3Captions(jsonPayload);
         if (jsonCues.length > 0) {
           attempts.push({
-            format: captionsUrl.includes("fmt=srv3")
-              ? "srv3"
-              : captionsUrl.includes("fmt=json3")
-                ? "json3"
-                : "original",
+            format: detectFormat(captionsUrl),
             ok: true,
             parsed: "json3",
           });
@@ -199,15 +289,23 @@ const fetchCaptionsFromTrack = async (
         // Not JSON payload; attempt XML parsing below.
       }
 
+      if (body.includes("<timedtext") || body.includes("<p ")) {
+        const srv3Cues = parseSrv3Captions(body);
+        if (srv3Cues.length > 0) {
+          attempts.push({
+            format: detectFormat(captionsUrl),
+            ok: true,
+            parsed: "srv3",
+          });
+          return { cues: srv3Cues, attempts };
+        }
+      }
+
       if (body.includes("<transcript") || body.includes("<text")) {
         const xmlCues = parseXmlCaptions(body);
         if (xmlCues.length > 0) {
           attempts.push({
-            format: captionsUrl.includes("fmt=srv3")
-              ? "srv3"
-              : captionsUrl.includes("fmt=json3")
-                ? "json3"
-                : "original",
+            format: detectFormat(captionsUrl),
             ok: true,
             parsed: "xml",
           });
@@ -215,22 +313,26 @@ const fetchCaptionsFromTrack = async (
         }
       }
 
+      if (body.includes("WEBVTT") || /\d{2}:\d{2}:\d{2}\.\d{3}\s+-->/.test(body)) {
+        const vttCues = parseVttCaptions(body);
+        if (vttCues.length > 0) {
+          attempts.push({
+            format: detectFormat(captionsUrl),
+            ok: true,
+            parsed: "vtt",
+          });
+          return { cues: vttCues, attempts };
+        }
+      }
+
       attempts.push({
-        format: captionsUrl.includes("fmt=srv3")
-          ? "srv3"
-          : captionsUrl.includes("fmt=json3")
-            ? "json3"
-            : "original",
+        format: detectFormat(captionsUrl),
         ok: true,
         parsed: "none",
       });
     } catch {
       attempts.push({
-        format: captionsUrl.includes("fmt=srv3")
-          ? "srv3"
-          : captionsUrl.includes("fmt=json3")
-            ? "json3"
-            : "original",
+        format: detectFormat(captionsUrl),
         ok: false,
         parsed: "none",
       });

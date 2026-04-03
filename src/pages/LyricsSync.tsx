@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Music4, Search, X, Play, Maximize2, Minimize2, PictureInPicture2, Palette, Check } from "lucide-react";
+import {
+  Loader2,
+  Music4,
+  Search,
+  X,
+  Play,
+  Maximize2,
+  Minimize2,
+  PictureInPicture2,
+  Palette,
+  Check,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -124,7 +135,10 @@ declare global {
         opts: {
           videoId: string;
           playerVars?: Record<string, string | number>;
-          events?: { onReady?: () => void; onStateChange?: (e: { data: number }) => void };
+          events?: {
+            onReady?: () => void;
+            onStateChange?: (e: { data: number }) => void;
+          };
         },
       ) => {
         destroy: () => void;
@@ -197,14 +211,17 @@ export default function LyricsSync() {
   const [error, setError] = useState<string | null>(null);
   const [currentMs, setCurrentMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [lyricsMode, setLyricsMode] = useState<"split" | "fullscreen" | "mini">("split");
+  const [lyricsMode, setLyricsMode] = useState<"split" | "fullscreen" | "mini">(
+    "split",
+  );
 
   /* Color customization */
   const [selectedPreset, setSelectedPreset] = useState(getStoredPreset);
   const [showPalette, setShowPalette] = useState(false);
 
   const activeColors = useMemo(
-    () => COLOR_PRESETS.find((p) => p.id === selectedPreset) || COLOR_PRESETS[0],
+    () =>
+      COLOR_PRESETS.find((p) => p.id === selectedPreset) || COLOR_PRESETS[0],
     [selectedPreset],
   );
 
@@ -225,9 +242,12 @@ export default function LyricsSync() {
     setIsSearching(true);
     setShowResults(true);
     try {
-      const { data, error: err } = await supabase.functions.invoke("youtube-search", {
-        body: { query: q, maxResults: 10 },
-      });
+      const { data, error: err } = await supabase.functions.invoke(
+        "youtube-search",
+        {
+          body: { query: q, maxResults: 10 },
+        },
+      );
       if (err || !data?.success) {
         setResults([]);
         return;
@@ -251,7 +271,10 @@ export default function LyricsSync() {
   /* Close dropdowns on outside click */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+      if (
+        searchBoxRef.current &&
+        !searchBoxRef.current.contains(e.target as Node)
+      ) {
         setShowResults(false);
       }
     };
@@ -268,59 +291,80 @@ export default function LyricsSync() {
 
   /* ── Load captions (with AI lyrics fallback) ──────────── */
 
-  const loadCaptions = useCallback(async (id: string, title?: string, artist?: string) => {
-    setIsLoading(true);
-    setError(null);
-    setCues([]);
-    try {
-      const { data, error: err } = await supabase.functions.invoke("youtube-captions", {
-        body: { videoId: id, lang: "en" },
-      });
+  const loadCaptions = useCallback(
+    async (id: string, title?: string, artist?: string) => {
+      setIsLoading(true);
+      setError(null);
+      setCues([]);
+      try {
+        const { data, error: err } = await supabase.functions.invoke(
+          "youtube-captions",
+          {
+            body: { videoId: id, lang: "en" },
+          },
+        );
 
-      const resolvedTitle =
-        typeof data?.title === "string" && data.title.trim().length > 0 ? data.title : title;
-      const resolvedArtist = artist || activeSong?.artist || "";
+        const resolvedTitle =
+          typeof data?.title === "string" && data.title.trim().length > 0
+            ? data.title
+            : title;
+        const resolvedArtist = artist || activeSong?.artist || "";
 
-      const captionsAvailable = !err && data?.success && Array.isArray(data.cues) && data.cues.length > 0;
+        const captionsAvailable =
+          !err &&
+          data?.success &&
+          Array.isArray(data.cues) &&
+          data.cues.length > 0;
 
-      if (captionsAvailable) {
-        setCues(data.cues);
-        return;
-      }
-
-      console.log("Captions not available, falling back to AI lyrics", {
-        title: resolvedTitle,
-        artist: resolvedArtist,
-        functionError: err?.message || null,
-        functionReason: data?.reason || null,
-      });
-
-      if (resolvedTitle) {
-        const { data: lyricsData, error: lyricsErr } = await supabase.functions.invoke("song-lyrics", {
-          body: { title: resolvedTitle, artist: resolvedArtist },
-        });
-        if (!lyricsErr && lyricsData?.success && lyricsData.lyrics) {
-          const lines = lyricsData.lyrics.split("\n").filter((l: string) => l.trim());
-          const interval = 3000;
-          const aiCues: CaptionCue[] = lines.map((text: string, i: number) => ({
-            startMs: i * interval,
-            durationMs: interval,
-            text: text.trim(),
-          }));
-          setCues(aiCues);
-          setError(null);
+        if (captionsAvailable) {
+          setCues(data.cues);
           return;
         }
-      }
 
-      setError(err?.message ? "Captions were unavailable and backup lyrics could not be loaded." : "No lyrics found for this video. Try a different song.");
-    } catch (e) {
-      console.error("loadCaptions error:", e);
-      setError("Could not fetch lyrics right now. Try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeSong?.artist]);
+        console.log("Captions not available, falling back to AI lyrics", {
+          title: resolvedTitle,
+          artist: resolvedArtist,
+          functionError: err?.message || null,
+          functionReason: data?.reason || null,
+        });
+
+        if (resolvedTitle) {
+          const { data: lyricsData, error: lyricsErr } =
+            await supabase.functions.invoke("song-lyrics", {
+              body: { title: resolvedTitle, artist: resolvedArtist },
+            });
+          if (!lyricsErr && lyricsData?.success && lyricsData.lyrics) {
+            const lines = lyricsData.lyrics
+              .split("\n")
+              .filter((l: string) => l.trim());
+            const interval = 3000;
+            const aiCues: CaptionCue[] = lines.map(
+              (text: string, i: number) => ({
+                startMs: i * interval,
+                durationMs: interval,
+                text: text.trim(),
+              }),
+            );
+            setCues(aiCues);
+            setError(null);
+            return;
+          }
+        }
+
+        setError(
+          err?.message
+            ? "Captions were unavailable and backup lyrics could not be loaded."
+            : "No lyrics found for this video. Try a different song.",
+        );
+      } catch (e) {
+        console.error("loadCaptions error:", e);
+        setError("Could not fetch lyrics right now. Try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [activeSong?.artist],
+  );
 
   /* ── Build YT player ─────────────────────────────────── */
 
@@ -356,17 +400,23 @@ export default function LyricsSync() {
       setVideoId(song.youtubeId);
       setShowResults(false);
       setCurrentMs(0);
-      await Promise.all([loadCaptions(song.youtubeId, song.title, song.artist), buildPlayer(song.youtubeId)]);
+      await loadCaptions(song.youtubeId, song.title, song.artist);
     },
-    [loadCaptions, buildPlayer],
+    [loadCaptions],
   );
 
   /* Seed from URL param */
   useEffect(() => {
     if (!seededVideo) return;
     setVideoId(seededVideo);
-    void Promise.all([loadCaptions(seededVideo), buildPlayer(seededVideo)]);
-  }, [seededVideo, loadCaptions, buildPlayer]);
+    void loadCaptions(seededVideo);
+  }, [seededVideo, loadCaptions]);
+
+  /* Build player once the host is mounted for the current video */
+  useEffect(() => {
+    if (!videoId) return;
+    void buildPlayer(videoId);
+  }, [videoId, buildPlayer]);
 
   /* Poll player time */
   useEffect(() => {
@@ -443,13 +493,22 @@ export default function LyricsSync() {
                   className="w-8 h-8 rounded-full border-2 transition-all"
                   style={{
                     background: preset.bg,
-                    borderColor: selectedPreset === preset.id ? preset.accent : "rgba(255,255,255,0.15)",
-                    boxShadow: selectedPreset === preset.id ? `0 0 12px ${preset.accent}60` : "none",
+                    borderColor:
+                      selectedPreset === preset.id
+                        ? preset.accent
+                        : "rgba(255,255,255,0.15)",
+                    boxShadow:
+                      selectedPreset === preset.id
+                        ? `0 0 12px ${preset.accent}60`
+                        : "none",
                   }}
                 >
                   {selectedPreset === preset.id && (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5" style={{ color: preset.accent }} />
+                      <Check
+                        className="w-3.5 h-3.5"
+                        style={{ color: preset.accent }}
+                      />
                     </div>
                   )}
                 </div>
@@ -478,11 +537,22 @@ export default function LyricsSync() {
                 transform: "scale(3)",
               }}
             />
-            <Music4 className="relative w-12 h-12" style={{ color: colors.text }} />
+            <Music4
+              className="relative w-12 h-12"
+              style={{ color: colors.text }}
+            />
           </div>
           <div className="flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" style={{ color: `${colors.text}99` }} />
-            <p className="font-body text-base" style={{ color: `${colors.text}b0` }}>Loading lyrics...</p>
+            <Loader2
+              className="w-4 h-4 animate-spin"
+              style={{ color: `${colors.text}99` }}
+            />
+            <p
+              className="font-body text-base"
+              style={{ color: `${colors.text}b0` }}
+            >
+              Loading lyrics...
+            </p>
           </div>
         </div>
       )}
@@ -490,10 +560,17 @@ export default function LyricsSync() {
       {error && !isLoading && (
         <div className="flex flex-col items-center justify-center h-full gap-3">
           <Music4 className="w-10 h-10" style={{ color: `${colors.text}40` }} />
-          <p className="font-body text-sm text-center max-w-xs" style={{ color: `${colors.text}90` }}>{error}</p>
+          <p
+            className="font-body text-sm text-center max-w-xs"
+            style={{ color: `${colors.text}90` }}
+          >
+            {error}
+          </p>
           {videoId && (
             <button
-              onClick={() => loadCaptions(videoId, activeSong?.title, activeSong?.artist)}
+              onClick={() =>
+                loadCaptions(videoId, activeSong?.title, activeSong?.artist)
+              }
               className="font-body text-sm hover:underline"
               style={{ color: colors.accent }}
             >
@@ -506,8 +583,13 @@ export default function LyricsSync() {
       {!isLoading && !error && cues.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full gap-3">
           <Music4 className="w-10 h-10" style={{ color: `${colors.text}30` }} />
-          <p className="font-body text-sm text-center" style={{ color: `${colors.text}80` }}>
-            {videoId ? "No lyrics available. Try another song." : "Search and select a song to see lyrics"}
+          <p
+            className="font-body text-sm text-center"
+            style={{ color: `${colors.text}80` }}
+          >
+            {videoId
+              ? "No lyrics available. Try another song."
+              : "Search and select a song to see lyrics"}
           </p>
         </div>
       )}
@@ -516,7 +598,8 @@ export default function LyricsSync() {
         <div className="space-y-0.5">
           {cues.map((cue, i) => {
             const isActive = i === activeCueIndex;
-            const dist = activeCueIndex >= 0 ? Math.abs(i - activeCueIndex) : 999;
+            const dist =
+              activeCueIndex >= 0 ? Math.abs(i - activeCueIndex) : 999;
             const isNear = !isActive && dist <= 2;
             const isFar = dist > 4;
 
@@ -525,7 +608,9 @@ export default function LyricsSync() {
                 type="button"
                 key={`${cue.startMs}-${i}`}
                 data-cue={i}
-                onClick={() => playerRef.current?.seekTo(cue.startMs / 1000, true)}
+                onClick={() =>
+                  playerRef.current?.seekTo(cue.startMs / 1000, true)
+                }
                 initial={false}
                 animate={{
                   scale: isActive ? 1.02 : 1,
@@ -576,10 +661,14 @@ export default function LyricsSync() {
                   </span>
                   <span
                     className={`font-display leading-relaxed transition-all duration-500 ${
-                      isFullscreen ? "text-xl sm:text-2xl md:text-3xl" : "text-base sm:text-lg"
+                      isFullscreen
+                        ? "text-xl sm:text-2xl md:text-3xl"
+                        : "text-base sm:text-lg"
                     }`}
                     style={{
-                      color: isActive ? colors.active : `${colors.text}${isNear ? "a0" : "55"}`,
+                      color: isActive
+                        ? colors.active
+                        : `${colors.text}${isNear ? "a0" : "55"}`,
                       fontWeight: isActive ? 700 : 400,
                       textShadow: isActive
                         ? `0 0 30px ${colors.glow}, 0 0 60px ${colors.accent}40, 0 2px 4px rgba(0,0,0,0.4)`
@@ -648,7 +737,10 @@ export default function LyricsSync() {
               {activeSong?.title || "Lyrics"}
             </p>
             {activeSong?.artist && !isMini && (
-              <p className="font-body text-xs truncate" style={{ color: `${colors.text}70` }}>
+              <p
+                className="font-body text-xs truncate"
+                style={{ color: `${colors.text}70` }}
+              >
                 {activeSong.artist}
               </p>
             )}
@@ -685,7 +777,11 @@ export default function LyricsSync() {
             title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             style={{ color: `${colors.text}90` }}
           >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
           </button>
           {/* Restore to split if in mini */}
           {isMini && (
@@ -704,7 +800,9 @@ export default function LyricsSync() {
       {/* Top/bottom fade */}
       <div
         className="absolute top-[44px] left-0 right-0 h-10 z-10 pointer-events-none"
-        style={{ background: `linear-gradient(to bottom, ${colors.accent}10, transparent)` }}
+        style={{
+          background: `linear-gradient(to bottom, ${colors.accent}10, transparent)`,
+        }}
       />
       <div
         className="absolute bottom-0 left-0 right-0 h-20 z-10 pointer-events-none"
@@ -716,7 +814,11 @@ export default function LyricsSync() {
       {/* Scrollable lyrics */}
       <div
         className={`flex-1 overflow-y-auto scrollbar-ornate ${
-          isMini ? "px-3 py-4" : isFullscreen ? "px-6 sm:px-16 md:px-24 py-12" : "px-5 py-8 sm:px-8"
+          isMini
+            ? "px-3 py-4"
+            : isFullscreen
+              ? "px-6 sm:px-16 md:px-24 py-12"
+              : "px-5 py-8 sm:px-8"
         }`}
       >
         {lyricsContent}
@@ -733,7 +835,10 @@ export default function LyricsSync() {
           }}
         >
           <Music4 className="w-3.5 h-3.5" style={{ color: colors.accent }} />
-          <span className="font-body text-xs" style={{ color: `${colors.text}70` }}>
+          <span
+            className="font-body text-xs"
+            style={{ color: `${colors.text}70` }}
+          >
             Tap any line to jump · {fmtTime(currentMs)}
           </span>
         </div>
@@ -798,7 +903,11 @@ export default function LyricsSync() {
                 disabled={isSearching || !query.trim()}
                 className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
+                {isSearching ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Search"
+                )}
               </Button>
             </form>
 
@@ -835,8 +944,12 @@ export default function LyricsSync() {
                           }}
                         />
                         <div className="min-w-0 flex-1">
-                          <p className="font-body text-sm text-foreground truncate">{song.title}</p>
-                          <p className="font-body text-xs text-muted-foreground truncate">{song.artist}</p>
+                          <p className="font-body text-sm text-foreground truncate">
+                            {song.title}
+                          </p>
+                          <p className="font-body text-xs text-muted-foreground truncate">
+                            {song.artist}
+                          </p>
                         </div>
                         <Play className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       </button>
@@ -844,20 +957,25 @@ export default function LyricsSync() {
                   </div>
                 </motion.div>
               )}
-              {showResults && results.length === 0 && !isSearching && query.trim() && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  className="absolute z-50 top-full mt-2 w-full rounded-2xl border border-border p-6 text-center"
-                  style={{
-                    background: "hsl(var(--card) / 0.97)",
-                    backdropFilter: "blur(20px)",
-                  }}
-                >
-                  <p className="font-body text-sm text-muted-foreground">No songs found. Try another search.</p>
-                </motion.div>
-              )}
+              {showResults &&
+                results.length === 0 &&
+                !isSearching &&
+                query.trim() && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="absolute z-50 top-full mt-2 w-full rounded-2xl border border-border p-6 text-center"
+                    style={{
+                      background: "hsl(var(--card) / 0.97)",
+                      backdropFilter: "blur(20px)",
+                    }}
+                  >
+                    <p className="font-body text-sm text-muted-foreground">
+                      No songs found. Try another search.
+                    </p>
+                  </motion.div>
+                )}
             </AnimatePresence>
           </div>
         )}
@@ -869,21 +987,34 @@ export default function LyricsSync() {
             <div className="ornate-border rounded-2xl bg-card/80 overflow-hidden">
               {videoId ? (
                 <>
-                  <div ref={playerHostRef} className="aspect-video w-full" style={{ background: "hsl(var(--earth))" }} />
+                  <div
+                    ref={playerHostRef}
+                    className="aspect-video w-full"
+                    style={{ background: "hsl(var(--earth))" }}
+                  />
                   <div className="p-4 border-t border-border/50">
                     <h2 className="font-display text-xl text-foreground truncate">
                       {activeSong?.title || "Now Playing"}
                     </h2>
                     {activeSong?.artist && (
-                      <p className="font-body text-sm text-muted-foreground truncate">{activeSong.artist}</p>
+                      <p className="font-body text-sm text-muted-foreground truncate">
+                        {activeSong.artist}
+                      </p>
                     )}
-                    <p className="font-body text-xs text-muted-foreground mt-1">{fmtTime(currentMs)}</p>
+                    <p className="font-body text-xs text-muted-foreground mt-1">
+                      {fmtTime(currentMs)}
+                    </p>
                   </div>
                 </>
               ) : (
-                <div className="aspect-video flex flex-col items-center justify-center" style={{ background: "hsl(var(--earth))" }}>
+                <div
+                  className="aspect-video flex flex-col items-center justify-center"
+                  style={{ background: "hsl(var(--earth))" }}
+                >
                   <Music4 className="w-12 h-12 text-muted-foreground/40 mb-3" />
-                  <p className="font-body text-sm text-muted-foreground">Search a song above to get started</p>
+                  <p className="font-body text-sm text-muted-foreground">
+                    Search a song above to get started
+                  </p>
                 </div>
               )}
             </div>

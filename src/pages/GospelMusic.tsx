@@ -509,6 +509,16 @@ export default function GospelMusic() {
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
+                    onClick={() => {
+                      setActiveVideo(song);
+                      setShowLyrics(true);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                    title="Lyrics"
+                  >
+                    <Music2 className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button
                     onClick={() => toggleFavorite(song.id)}
                     className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                   >

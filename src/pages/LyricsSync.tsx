@@ -98,6 +98,7 @@ export default function LyricsSync() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentMs, setCurrentMs] = useState(0);
+  const [lyricsMode, setLyricsMode] = useState<"split" | "fullscreen" | "mini">("split");
 
   const playerHostRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<{ destroy: () => void; seekTo: (s: number, a?: boolean) => void; getCurrentTime: () => number } | null>(null);

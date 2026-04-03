@@ -8,6 +8,7 @@ import GsapReveal from "@/components/GsapReveal";
 import OrnamentDivider from "@/components/OrnamentDivider";
 import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from "@capacitor/core";
+import LyricsPanel from "@/components/LyricsPanel";
 
 interface PlaylistItem {
   id: string;

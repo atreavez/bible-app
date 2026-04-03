@@ -1,6 +1,15 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Heart, ExternalLink, Search, X, Loader2, RefreshCw } from "lucide-react";
+import {
+  Play,
+  Heart,
+  ExternalLink,
+  Search,
+  X,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -42,13 +51,25 @@ const pickRandom = (arr: string[], count: number): string[] => {
 
 const classifyCategory = (title: string, artist: string): string => {
   const text = `${title} ${artist}`.toLowerCase();
-  if (text.includes("hymn") || text.includes("grace") || text.includes("it is well")) {
+  if (
+    text.includes("hymn") ||
+    text.includes("grace") ||
+    text.includes("it is well")
+  ) {
     return "Hymns";
   }
-  if (text.includes("praise") || text.includes("hallelujah") || text.includes("victory")) {
+  if (
+    text.includes("praise") ||
+    text.includes("hallelujah") ||
+    text.includes("victory")
+  ) {
     return "Praise";
   }
-  if (text.includes("worship") || text.includes("adore") || text.includes("holy")) {
+  if (
+    text.includes("worship") ||
+    text.includes("adore") ||
+    text.includes("holy")
+  ) {
     return "Worship";
   }
   return "Gospel";
@@ -111,7 +132,9 @@ export default function GospelMusic() {
 
       const deduped = flattened.filter(
         (song, index, list) =>
-          list.findIndex((candidate) => candidate.youtubeId === song.youtubeId) === index,
+          list.findIndex(
+            (candidate) => candidate.youtubeId === song.youtubeId,
+          ) === index,
       );
 
       const shuffled = [...deduped].sort(() => Math.random() - 0.5);
@@ -119,11 +142,15 @@ export default function GospelMusic() {
 
       setTrendingSongs(latestTrending);
       if (latestTrending.length === 0) {
-        setTrendingError("No trending gospel songs found right now. Tap refresh to try again.");
+        setTrendingError(
+          "No trending gospel songs found right now. Tap refresh to try again.",
+        );
       }
     } catch {
       setTrendingSongs([]);
-      setTrendingError("Unable to fetch trending songs right now. Check connection and try again.");
+      setTrendingError(
+        "Unable to fetch trending songs right now. Check connection and try again.",
+      );
     } finally {
       setIsLoadingTrending(false);
     }
@@ -137,10 +164,13 @@ export default function GospelMusic() {
   const suggestions = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return [];
-    return trendingSongs.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q),
-    ).slice(0, 5);
+    return trendingSongs
+      .filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.artist.toLowerCase().includes(q),
+      )
+      .slice(0, 5);
   }, [searchQuery, trendingSongs]);
 
   // Close suggestions on outside click
@@ -229,7 +259,8 @@ export default function GospelMusic() {
             Gospel <span className="text-gradient-gold italic">Music</span>
           </h1>
           <p className="mt-3 font-body text-muted-foreground max-w-lg mx-auto">
-            Search any gospel song on YouTube or browse latest trending picks refreshed from YouTube.
+            Search any gospel song on YouTube or browse latest trending picks
+            refreshed from YouTube.
           </p>
         </GsapReveal>
 
@@ -243,7 +274,9 @@ export default function GospelMusic() {
             }}
             disabled={isLoadingTrending}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingTrending ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${isLoadingTrending ? "animate-spin" : ""}`}
+            />
             Refresh Trending
           </Button>
         </div>
@@ -283,6 +316,14 @@ export default function GospelMusic() {
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Background play in YouTube
                   </Button>
+                </div>
+                <div className="mt-2 flex justify-center">
+                  <Link
+                    to={`/lyrics?video=${activeVideo.youtubeId}`}
+                    className="text-sm text-olive hover:underline font-body"
+                  >
+                    Open synced lyrics
+                  </Link>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground font-body">
                   Screen-off playback is managed by the YouTube app/browser, not
@@ -497,6 +538,13 @@ export default function GospelMusic() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
+                  <Link
+                    to={`/lyrics?video=${song.youtubeId}`}
+                    className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors text-xs text-olive"
+                    aria-label={`Open lyrics for ${song.title}`}
+                  >
+                    Lyrics
+                  </Link>
                   <button
                     onClick={() => toggleFavorite(song.id)}
                     className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"

@@ -13,6 +13,7 @@ const navLinks = [
   { to: "/stories", label: "Stories" },
   { to: "/bookmarks", label: "Bookmarks" },
   { to: "/music", label: "Music" },
+  { to: "/lyrics", label: "Lyrics" },
   { to: "/progress", label: "Progress" },
 ];
 
@@ -62,7 +63,11 @@ export default function Navbar() {
             className="w-9 h-9 rounded-lg bg-earth/30 border border-gold/10 flex items-center justify-center text-earth-foreground/80 hover:text-gold transition-all duration-300"
             aria-label="Toggle dark mode"
           >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isDark ? (
+              <Sun className="w-4 h-4" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
           </button>
           <button
             onClick={() => setOpen(!open)}

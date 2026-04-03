@@ -5,7 +5,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import SplashScreen from "@/components/SplashScreen";
-import OnboardingQuestionnaire, { useOnboarding } from "@/components/OnboardingQuestionnaire";
+import OnboardingQuestionnaire, {
+  useOnboarding,
+} from "@/components/OnboardingQuestionnaire";
 import Index from "./pages/Index.tsx";
 import BibleReader from "./pages/BibleReader.tsx";
 import BibleStories from "./pages/BibleStories.tsx";
@@ -15,6 +17,7 @@ import Bookmarks from "./pages/Bookmarks.tsx";
 import BibleChat from "./pages/BibleChat.tsx";
 import Progress from "./pages/Progress.tsx";
 import GospelMusic from "./pages/GospelMusic.tsx";
+import LyricsSync from "./pages/LyricsSync.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -38,7 +41,12 @@ function AppContent() {
       )}
 
       {/* Main App */}
-      <div style={{ opacity: splashDone && !needsOnboarding ? 1 : 0, transition: "opacity 0.5s ease" }}>
+      <div
+        style={{
+          opacity: splashDone && !needsOnboarding ? 1 : 0,
+          transition: "opacity 0.5s ease",
+        }}
+      >
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -52,6 +60,7 @@ function AppContent() {
             <Route path="/chat" element={<BibleChat />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/music" element={<GospelMusic />} />
+            <Route path="/lyrics" element={<LyricsSync />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

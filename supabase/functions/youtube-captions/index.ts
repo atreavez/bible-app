@@ -124,8 +124,7 @@ const parseVttCaptions = (vtt: string): CaptionCue[] => {
     const parts = time.split(":").map((p) => p.trim());
     if (parts.length < 2 || parts.length > 3) return 0;
 
-    const [hh, mm, ss] =
-      parts.length === 3 ? parts : ["0", parts[0], parts[1]];
+    const [hh, mm, ss] = parts.length === 3 ? parts : ["0", parts[0], parts[1]];
     const [secPart, msPart = "0"] = ss.split(".");
 
     const hours = Number(hh) || 0;
@@ -313,7 +312,10 @@ const fetchCaptionsFromTrack = async (
         }
       }
 
-      if (body.includes("WEBVTT") || /\d{2}:\d{2}:\d{2}\.\d{3}\s+-->/.test(body)) {
+      if (
+        body.includes("WEBVTT") ||
+        /\d{2}:\d{2}:\d{2}\.\d{3}\s+-->/.test(body)
+      ) {
         const vttCues = parseVttCaptions(body);
         if (vttCues.length > 0) {
           attempts.push({
